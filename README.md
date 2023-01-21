@@ -23,6 +23,11 @@ You are now ready to get your VCF on! 😁
 
 ## Changelog
 
+* **01/21/2023**
+  * Added support for VCF 4.5
+  * Fixed vSAN bootdisk size
+  * Follow [KB 89990](https://kb.vmware.com/s/article/89990) if you get "Gateway IP Address for Management is not contactable"
+
 * **05/25/2021**
   * Initial Release
 

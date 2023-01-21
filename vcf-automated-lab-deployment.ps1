@@ -27,9 +27,9 @@ $CloudbuilderRootPassword = "VMw@re123!"
 # SDDC Manager Configuration
 $SddcManagerName = "vcf-m01-sddcm01"
 $SddcManagerIP = "172.17.31.181"
-$SddcManagerVcfPassword = "VMware1!"
-$SddcManagerRootPassword = "VMware1!"
-$SddcManagerRestPassword = "VMware1!"
+$SddcManagerVcfPassword = "VMware1!VMware1!"
+$SddcManagerRootPassword = "VMware1!VMware1!"
+$SddcManagerRestPassword = "VMware1!VMware1!"
 $SddcManagerLocalPassword = "VMware1!VMware1!"
 
 # Nested ESXi VMs to deploy
@@ -45,6 +45,7 @@ $NestedESXivCPU = "8"
 $NestedESXivMEM = "38" #GB
 $NestedESXiCachingvDisk = "4" #GB
 $NestedESXiCapacityvDisk = "60" #GB
+$NestedESXiBootDisk = "32" #GB
 
 # ESXi Configuration
 $NestedESXiManagementNetworkCidr = "172.17.31.0/24" # should match $VMNetwork configuration
@@ -233,6 +234,9 @@ if($deployNestedESXiVMs -eq 1) {
         My-Logger "Updating vSAN Cache VMDK size to $NestedESXiCachingvDisk GB & Capacity VMDK size to $NestedESXiCapacityvDisk GB ..."
         Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 2" | Set-HardDisk -CapacityGB $NestedESXiCachingvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
         Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 3" | Set-HardDisk -CapacityGB $NestedESXiCapacityvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+
+        My-Logger "Updating vSAN Boot Disk size to $NestedESXiBootDisk GB ..."
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 1" | Set-HardDisk -CapacityGB $NestedESXiBootDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
         My-Logger "Powering On $vmname ..."
         $vm | Start-Vm -RunAsync | Out-Null
