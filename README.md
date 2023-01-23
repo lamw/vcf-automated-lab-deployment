@@ -23,6 +23,14 @@ You are now ready to get your VCF on! 😁
 
 ## Changelog
 
+* **01/21/2023**
+  * Added support for [VCF 4.5](https://imthiyaz.cloud/automated-vcf-deployment-script-with-nested-esxi) 
+  * Fixed vSAN bootdisk size
+  * Follow [KB 89990](https://kb.vmware.com/s/article/89990) if you get "Gateway IP Address for Management is not contactable"
+  * If Failed VSAN Diskgroup follow [FakeSCSIReservations](https://williamlam.com/2013/11/how-to-run-nested-esxi-on-top-of-vsan.html) 
+  
+  
+
 * **05/25/2021**
   * Initial Release
 
@@ -41,10 +49,10 @@ You are now ready to get your VCF on! 😁
 
         **Note:** For detailed requirements, plesae refer to the official document [here](https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-EE236215-DA4D-4579-8BEB-A693D1882C77.html)
 
-* VMware Cloud Foundation 4.2 Licenses for vCenter, ESXi, vSAN and NSX-T
+* VMware Cloud Foundation 4.2/4.5 Licenses for vCenter, ESXi, vSAN and NSX-T
 
 * Desktop (Windows, Mac or Linux) with latest PowerShell Core and PowerCLI 12.1 Core installed. See [instructions here](https://blogs.vmware.com/PowerCLI/2018/03/installing-powercli-10-0-0-macos.html) for more details
-* vSphere 7 Update 1d & Cloud Builder OVAs:
+* vSphere 7 Update 1d & Cloud Builder OVAs or vSphere 7 Update 3h with Cloud Builder 4.5 :
     * [VMware Cloud Builder (17559673) OVA](https://my.vmware.com/web/vmware/downloads/details?downloadGroup=VCF420&productId=1121&rPId=60057)
     * [Nested ESXi 7.0 Update 1d OVA](https://download3.vmware.com/software/vmw-tools/nested-esxi/Nested_ESXi7.0u1d_Appliance_Template_v1.ova)
 
@@ -87,9 +95,9 @@ This section describes the configuration that will be used to deploy SDDC Manage
 ```console
 $SddcManagerName = "vcf-m01-sddcm01"
 $SddcManagerIP = "172.17.31.181"
-$SddcManagerVcfPassword = "VMware1!"
-$SddcManagerRootPassword = "VMware1!"
-$SddcManagerRestPassword = "VMware1!"
+$SddcManagerVcfPassword = "VMware1!VMware1!"
+$SddcManagerRootPassword = "VMware1!VMware1!"
+$SddcManagerRestPassword = "VMware1!VMware1!"
 $SddcManagerLocalPassword = "VMware1!VMware1!"
 ```
 
@@ -109,6 +117,7 @@ $NestedESXivCPU = "8"
 $NestedESXivMEM = "38" #GB
 $NestedESXiCachingvDisk = "4" #GB
 $NestedESXiCapacityvDisk = "60" #GB
+$NestedESXiBootDisk = "32" #GB
 ```
 
 This section describes the Nested ESXi Network that will be used for VCF configuration, this CIDR definition should match the network specified in `$VMNetwork` variable.
