@@ -641,5 +641,5 @@ $duration = [math]::Round((New-TimeSpan -Start $StartTime -End $EndTime).TotalMi
 
 My-Logger "VCF Lab Deployment Complete!"
 My-Logger "StartTime: $StartTime"
-My-Logger "  EndTime: $EndTime"
-My-Logger " Duration: $duration minutes to Deploy Nested ESXi and Import CloudBuilder"
+My-Logger "EndTime: $EndTime"
+My-Logger "Duration: $duration minutes to Deploy Nested ESXi and Import CloudBuilder"
