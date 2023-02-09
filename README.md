@@ -22,6 +22,8 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **02/09/2023**
+  * Update ESXi Memory to fix "Configure NSX-T Data Center Transport Node" and "Reconfigure vSphere High Availability" failing tasks by increasing ESXi memory to 46GB [explained here](http://strivevirtually.net) 
 
 * **01/21/2023**
   * Added support for [VCF 4.5](https://imthiyaz.cloud/automated-vcf-deployment-script-with-nested-esxi) 
@@ -114,7 +116,7 @@ $NestedESXiHostnameToIPs = @{
 This section describes the minimum amount resources that will need to be allocated to each of the Nested ESXi VM(s) for proper VCF configuration Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
 ```console
 $NestedESXivCPU = "8"
-$NestedESXivMEM = "38" #GB
+$NestedESXivMEM = "46" #GB
 $NestedESXiCachingvDisk = "4" #GB
 $NestedESXiCapacityvDisk = "60" #GB
 $NestedESXiBootDisk = "32" #GB
