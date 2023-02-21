@@ -22,8 +22,11 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **02/21/2023**
+  * Added note to Configuration for deploying VCF Management Domain using only a single ESXi host
+
 * **02/09/2023**
-  * Update ESXi Memory to fix "Configure NSX-T Data Center Transport Node" and "Reconfigure vSphere High Availability" failing tasks by increasing ESXi memory to 46GB [explained here](http://strivevirtually.net) 
+  * Update ESXi Memory to fix "Configure NSX-T Data Center Transport Node" and "Reconfigure vSphere High Availability" failing tasks by increasing ESXi memory to 46GB [explained here](http://strivevirtually.net)
 
 * **01/21/2023**
   * Added support for [VCF 4.5](https://imthiyaz.cloud/automated-vcf-deployment-script-with-nested-esxi)
@@ -112,6 +115,8 @@ $NestedESXiHostnameToIPs = @{
     "vcf-m01-esx04"   = "172.17.31.188"
 }
 ```
+
+**Note:** A VCF Management Domain can be deployed with just a single Nested ESXi VM. For more details, please see this [blog post](https://williamlam.com/2023/02/vmware-cloud-foundation-with-a-single-esxi-host-for-management-domain.html) for the required tweaks.
 
 This section describes the minimum amount resources that will need to be allocated to each of the Nested ESXi VM(s) for proper VCF configuration Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
 ```console
