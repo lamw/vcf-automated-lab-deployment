@@ -22,6 +22,9 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **02/28/2023**
+  * Added note on DRS-enabled Cluster for vApp creation and pre-check in code
+
 * **02/21/2023**
   * Added note to Configuration for deploying VCF Management Domain using only a single ESXi host
 
@@ -46,6 +49,7 @@ You are now ready to get your VCF on! 😁
     * Compute
         * Ability to provision VMs with up to 8 vCPU
         * Ability to provision up to 192 GB of memory
+        * DRS-enabled Cluster (not required but vApp creation will not be possible)
     * Network
         * 1 x Standard or Distributed Portgroup (routable) to deploy all VMs (VCSA, NSX-T Manager & NSX-T Edge)
            * 9 x IP Addresses for Cloud Builder, SDDC Manager, VCSA, ESXi and NSX-T VMs
