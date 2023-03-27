@@ -186,7 +186,7 @@ if($confirmDeployment -eq 1) {
     Clear-Host
 }
 
-if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1) {
+if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1 -or $moveVMsIntovApp -eq 1) {
     My-Logger "Connecting to Management vCenter Server $VIServer ..."
     $viConnection = Connect-VIServer $VIServer -User $VIUsername -Password $VIPassword -WarningAction SilentlyContinue
 
@@ -271,6 +271,7 @@ if($moveVMsIntovApp -eq 1) {
     # Check whether DRS is enabled as that is required to create vApp
     if((Get-Cluster -Server $viConnection $cluster).DrsEnabled) {
         My-Logger "Creating vApp $VAppName ..."
+        $rp = Get-ResourcePool -Name Resources -Location $cluster
         $VApp = New-VApp -Name $VAppName -Server $viConnection -Location $cluster
 
         if(-Not (Get-Folder $VMFolder -ErrorAction Ignore)) {
@@ -281,13 +282,13 @@ if($moveVMsIntovApp -eq 1) {
         if($deployNestedESXiVMs -eq 1) {
             My-Logger "Moving Nested ESXi VMs into $VAppName vApp ..."
             $NestedESXiHostnameToIPs.GetEnumerator() | Sort-Object -Property Value | Foreach-Object {
-                $vm = Get-VM -Name $_.Key -Server $viConnection
+                $vm = Get-VM -Name $_.Key -Server $viConnection -Location $cluster | where{$_.ResourcePool.Id -eq $rp.Id}
                 Move-VM -VM $vm -Server $viConnection -Destination $VApp -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
             }
         }
 
         if($deployCloudBuilder -eq 1) {
-            $cloudBuilderVM = Get-VM -Name $CloudbuilderVMName -Server $viConnection
+            $cloudBuilderVM = Get-VM -Name $CloudbuilderVMName -Server $viConnection -Location $cluster | where{$_.ResourcePool.Id -eq $rp.Id}
             My-Logger "Moving $CloudbuilderVMName into $VAppName vApp ..."
             Move-VM -VM $cloudBuilderVM -Server $viConnection -Destination $VApp -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
         }
