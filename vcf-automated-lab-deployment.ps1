@@ -300,7 +300,7 @@ if($moveVMsIntovApp -eq 1) {
     }
 }
 
-if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1) {
+if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1 -or $moveVMsIntovApp -eq 1) {
     My-Logger "Disconnecting from $VIServer ..."
     Disconnect-VIServer -Server $viConnection -Confirm:$false
 }
