@@ -23,7 +23,7 @@ You are now ready to get your VCF on! 😁
 
 ## Changelog
 * **03/27/2023**
-  * Enable multiple deployment on the same Cluster
+  * Enable multiple vApp deployment on the same Cluster
   
 * **02/28/2023**
   * Added note on DRS-enabled Cluster for vApp creation and pre-check in code
