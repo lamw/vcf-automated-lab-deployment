@@ -5,6 +5,7 @@
 * [Description](#description)
 * [Changelog](#changelog)
 * [Requirements](#requirements)
+* [FAQ](#faq)
 * [Configuration](#configuration)
 * [Logging](#logging)
 * [Sample Execution](#sample-execution)
@@ -22,6 +23,10 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **04/01/2023**
+  * Added an option to export the VMs as OVAs of the last Nested VCF lab vApp created based on the last MoRef
+  * Added FAQ section
+
 * **03/27/2023**
   * Enable multiple vApp deployment on the same Cluster
   
@@ -67,6 +72,27 @@ You are now ready to get your VCF on! 😁
 * vSphere 7 Update 1d & Cloud Builder OVAs or vSphere 7 Update 3h with Cloud Builder 4.5 :
     * [VMware Cloud Builder (17559673) OVA](https://my.vmware.com/web/vmware/downloads/details?downloadGroup=VCF420&productId=1121&rPId=60057)
     * [Nested ESXi 7.0 Update 1d OVA](https://download3.vmware.com/software/vmw-tools/nested-esxi/Nested_ESXi7.0u1d_Appliance_Template_v1.ova)
+
+## FAQ
+
+1) Can I just export the VMs later after the last vApp deployed?
+
+    * Yes, simply search for the following variables and change their values to `0` but change $exportVMs to `1` to not deploy the VMs or generate the Json configurations	
+	```
+	$deployNestedESXiVMs = 0
+	$deployCloudBuilder = 0
+	$moveVMsIntovApp = 0
+	$generateJson = 0
+	$exportVMs = 1
+	```	
+	* Also change the destination folder for the $VMExportPath variable and depending if your on Windows add the trailing `\` or on Mac/Linux add the trailing `/` at the end 	
+	```
+	on Windows it will looklike this
+	
+	$VMExportPath = "N:\VM\"
+	```	
+	* The last lab vApp deployed will be stopped if not already, and a folder with its name will be created with all VMs exported as OVAs, and the vApp will be started afterwards
+
 
 ## Configuration
 
