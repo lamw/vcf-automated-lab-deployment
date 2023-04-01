@@ -10,6 +10,9 @@ $VIPassword = "FILL-ME-IN"
 $NestedESXiApplianceOVA = "C:\Users\william\Desktop\VCF\Nested_ESXi7.0u1d_Appliance_Template_v1.ova"
 $CloudBuilderOVA = "C:\Users\william\Desktop\VCF\VMware-Cloud-Builder-4.2.0.0-17559673_OVF10.ova"
 
+# Full Path to Export VMs (optional)
+$VMExportPath = "N:\VM\"
+
 # VCF Required Licenses
 $VCSALicense = "FILL-ME-IN"
 $ESXILicense = "FILL-ME-IN"
@@ -92,6 +95,7 @@ $deployNestedESXiVMs = 1
 $deployCloudBuilder = 1
 $moveVMsIntovApp = 1
 $generateJson = 1
+$exportVMs = 0
 
 $StartTime = Get-Date
 
@@ -118,6 +122,13 @@ if($preCheck -eq 1) {
     if(!(Test-Path $CloudBuilderOVA)) {
         Write-Host -ForegroundColor Red "`nUnable to find $CloudBuilderOVA ...`n"
         exit
+    }
+    
+    if($exportVMs -eq 1) {
+		if(!(Test-Path $VMExportPath)) {
+			Write-Host -ForegroundColor Red "`nUnable to find $VMExportPath ...`n"
+			exit
+		}
     }
 
     if($PSVersionTable.PSEdition -ne "Core") {
@@ -177,6 +188,11 @@ if($confirmDeployment -eq 1) {
     Write-Host -ForegroundColor White $VMNTP
     Write-Host -NoNewline -ForegroundColor Green "Syslog: "
     Write-Host -ForegroundColor White $VMSyslog
+    
+    Write-Host -ForegroundColor Yellow "`n---- Export Configuration ----"
+	Write-Host -ForegroundColor White "0 or 1 whether enabled: " $exportVMs
+	Write-Host -NoNewline -ForegroundColor Green "VM Export Path: "
+	Write-Host -ForegroundColor White $VMExportPath
 
     Write-Host -ForegroundColor Magenta "`nWould you like to proceed with this deployment?`n"
     $answer = Read-Host -Prompt "Do you accept (Y or N)"
@@ -186,7 +202,7 @@ if($confirmDeployment -eq 1) {
     Clear-Host
 }
 
-if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1 -or $moveVMsIntovApp -eq 1) {
+if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1 -or $moveVMsIntovApp -eq 1 -or $exportVMs -eq 1) {
     My-Logger "Connecting to Management vCenter Server $VIServer ..."
     $viConnection = Connect-VIServer $VIServer -User $VIUsername -Password $VIPassword -WarningAction SilentlyContinue
 
@@ -300,7 +316,25 @@ if($moveVMsIntovApp -eq 1) {
     }
 }
 
-if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1 -or $moveVMsIntovApp -eq 1) {
+if($exportVMs -eq 1) {
+	$Vapps = Get-VApp -Server $viConnection -Location $cluster -Name "Nested-VCF-Lab-*"			# Get all the VApp(s) with name starting with Nested-VCF-Lab-
+	$LastVAppName = $Vapps.Name | Sort-Object -Property MoRef -Descending | select -Last 1		# Get the last created VApp name based on the last VApp MoRef number
+	$ExportedVCFlab = $VMExportPath+$LastVAppName												# Concatenate the path given and, the VApp name as folder name
+	$LastVAppStatus = $Vapps.Status | Sort-Object -Property MoRef -Descending | select -Last 1	# Get the running status of the last created VApp
+	
+	If ($LastVAppStatus -eq "Started") {
+	My-Logger "Stopping $LastVAppName"
+	Get-VApp -Name $LastVAppName | Stop-VApp -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile 
+	}
+	
+	My-Logger "Exporting VMs as OVA from the latest VApp deployed to $VMExportPath$LastVAppName"
+	Get-VM -Location $LastVAppName | Export-VApp -Destination $ExportedVCFlab -Force -Format Ova  | Out-File -Append -LiteralPath $verboseLogFile
+	
+	My-Logger "Starting back $LastVAppName"
+	Start-VApp $LastVAppName -Confirm:$false -RunAsync | Out-File -Append -LiteralPath $verboseLogFile 
+}
+
+if($deployNestedESXiVMs -eq 1 -or $deployCloudBuilder -eq 1 -or $moveVMsIntovApp -eq 1 -or $exportVMs -eq 1) {
     My-Logger "Disconnecting from $VIServer ..."
     Disconnect-VIServer -Server $viConnection -Confirm:$false
 }
@@ -648,4 +682,4 @@ $duration = [math]::Round((New-TimeSpan -Start $StartTime -End $EndTime).TotalMi
 My-Logger "VCF Lab Deployment Complete!"
 My-Logger "StartTime: $StartTime"
 My-Logger "EndTime: $EndTime"
-My-Logger "Duration: $duration minutes to Deploy Nested ESXi and Import CloudBuilder"
+My-Logger "Duration: $duration minutes to Deploy Nested ESXi and CloudBuilder and if opted Export them to OVAs"
