@@ -9,7 +9,8 @@
 * [Logging](#logging)
 * [Sample Execution](#sample-execution)
     * [Lab Deployment Script](#lab-deployment-script)
-    * [Deploy VMware Cloud Foundation](#deploy-vmware-cloud-foundation)
+    * [Deploy VCF Management Domain](#deploy-vcf-management-domain)
+    * [Deploy VCF Workload Domain](#deploy-vcf-workload-domain)
 
 ## Description
 
@@ -22,9 +23,17 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **01/29/2024**
+  * Added support for [VCF 5.1]([text](https://blogs.vmware.com/cloud-foundation/2023/11/07/announcing-availability-of-vmware-cloud-foundation-5-1/))
+  * Automatically start VCF Management Domain bringup in SDDC Manager using generated JSON deployment file (vcf-mgmt.json)
+  * Added support for deploying Nested ESXi hosts for Workload Domain
+  * Automatically generate VCF Workload Domain host commission JSON file (vcf-commission-host.json) for SDDC Manager
+  * Added `-CoresPerSocket` argument to optimize for Nested ESXi deployment for licensing
+  * Added variables (`$NestedESXivMotionNetworkCidr`, `$NestedESXivSANNetworkCidr` and `$NestedESXiNSXTepNetworkCidr`) for customizing ESXi vMotion, vSAN and NSX TEP network CIDRs
+
 * **03/27/2023**
   * Enable Multiple deployment on the same Cluster
-  
+
 * **02/28/2023**
   * Added note on DRS-enabled Cluster for vApp creation and pre-check in code
 
@@ -44,7 +53,7 @@ You are now ready to get your VCF on! 😁
   * Initial Release
 
 ## Requirements
-* vCenter Server running at least vSphere 6.7 or later
+* vCenter Server running at least vSphere 7.0 or later
     * If your physical storage is vSAN, please ensure you've applied the following setting as mentioned [here](https://www.williamlam.com/2013/11/how-to-run-nested-esxi-on-top-of-vsan.html)
 * ESXi Networking
   * Enable either [MAC Learning](https://williamlam.com/2018/04/native-mac-learning-in-vsphere-6-7-removes-the-need-for-promiscuous-mode-for-nested-esxi.html) or [Promiscuous Mode](https://kb.vmware.com/kb/1004099) on your physical ESXi host networking to ensure proper network connectivity for Nested ESXi workloads
@@ -55,18 +64,18 @@ You are now ready to get your VCF on! 😁
         * DRS-enabled Cluster (not required but vApp creation will not be possible)
     * Network
         * 1 x Standard or Distributed Portgroup (routable) to deploy all VMs (VCSA, NSX-T Manager & NSX-T Edge)
-           * 9 x IP Addresses for Cloud Builder, SDDC Manager, VCSA, ESXi and NSX-T VMs
+           * 13 x IP Addresses for Cloud Builder, SDDC Manager, VCSA, ESXi and NSX-T VMs
     * Storage
-        * Ability to provision up to 400GB of storage
+        * Ability to provision up to 500GB of storage
 
         **Note:** For detailed requirements, plesae refer to the official document [here](https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-EE236215-DA4D-4579-8BEB-A693D1882C77.html)
 
-* VMware Cloud Foundation 4.2/4.5 Licenses for vCenter, ESXi, vSAN and NSX-T
+* VMware Cloud Foundation 4.x or 5.x Licenses for vCenter, ESXi, vSAN and NSX-T
 
 * Desktop (Windows, Mac or Linux) with latest PowerShell Core and PowerCLI 12.1 Core installed. See [instructions here](https://blogs.vmware.com/PowerCLI/2018/03/installing-powercli-10-0-0-macos.html) for more details
-* vSphere 7 Update 1d & Cloud Builder OVAs or vSphere 7 Update 3h with Cloud Builder 4.5 :
-    * [VMware Cloud Builder (17559673) OVA](https://my.vmware.com/web/vmware/downloads/details?downloadGroup=VCF420&productId=1121&rPId=60057)
-    * [Nested ESXi 7.0 Update 1d OVA](https://download3.vmware.com/software/vmw-tools/nested-esxi/Nested_ESXi7.0u1d_Appliance_Template_v1.ova)
+* vSphere 8.0 Update 2 & Cloud Builder 5.1 or vSphere 7 Update 3h with Cloud Builder 4.5 or vSphere 7 Update 1d & Cloud Builder 4.2:
+    * [VMware Cloud Builder (22688368) OVA]([https://my.vmware.com/web/vmware/downloads/details?downloadGroup=VCF420&productId=1121&rPId=60057](https://customerconnect.vmware.com/downloads/details?downloadGroup=VCF510&productId=1484&rPId=112797))
+    * [Nested ESXi 8.0 Update 2 OVA](https://download3.vmware.com/software/vmw-tools/nested-esxi/Nested_ESXi8.0u2_Appliance_Template_v2.ova)
 
 ## Configuration
 
@@ -93,6 +102,13 @@ $VSANLicense = "FILL-ME-IN"
 $NSXLicense = "FILL-ME-IN"
 ```
 
+This section defines the VCF configurations including the name of the output files for deploying the VCF Management Domain along with additional ESXi hosts to commission for use for VCF Workload Domain deployment. The default values are sufficient.
+```console
+$VCFManagementDomainPoolName = "vcf-m01-rp01"
+$VCFManagementDomainJSONFile = "vcf-mgmt.json"
+$VCFWorkloadDomainJSONFile = "vcf-commission-host.json"
+```
+
 This section describes the configuration for the VMware Cloud Builder virtual appliance:
 ```console
 $CloudbuilderVMName = "vcf-m01-cb01"
@@ -115,11 +131,21 @@ $SddcManagerLocalPassword = "VMware1!VMware1!"
 
 This section defines the number of Nested ESXi VMs to deploy along with their associated IP Address(s). The names are the display name of the VMs when deployed and you should ensure these are added to your DNS infrastructure. A minimum of four hosts is required for proper VCF deployment.
 ```console
-$NestedESXiHostnameToIPs = @{
+$NestedESXiHostnameToIPsForManagementDomain = @{
     "vcf-m01-esx01"   = "172.17.31.185"
     "vcf-m01-esx02"   = "172.17.31.186"
     "vcf-m01-esx03"   = "172.17.31.187"
     "vcf-m01-esx04"   = "172.17.31.188"
+}
+```
+
+This section defines the number of Nested ESXi VMs to deploy along with their associated IP Address(s) for use in a Workload Domain deployment. The names are the display name of the VMs when deployed and you should ensure these are added to your DNS infrastructure. A minimum of four hosts should be used for Workload Domain deployment
+```console
+$NestedESXiHostnameToIPsForWorkloadDomain = @{
+    "vcf-m01-esx05"   = "172.17.31.189"
+    "vcf-m01-esx06"   = "172.17.31.190"
+    "vcf-m01-esx07"   = "172.17.31.191"
+    "vcf-m01-esx08"   = "172.17.31.192"
 }
 ```
 
@@ -128,15 +154,18 @@ $NestedESXiHostnameToIPs = @{
 This section describes the minimum amount resources that will need to be allocated to each of the Nested ESXi VM(s) for proper VCF configuration Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
 ```console
 $NestedESXivCPU = "8"
-$NestedESXivMEM = "46" #GB
+$NestedESXivMEM = "48" #GB
 $NestedESXiCachingvDisk = "4" #GB
-$NestedESXiCapacityvDisk = "60" #GB
+$NestedESXiCapacityvDisk = "120" #GB
 $NestedESXiBootDisk = "32" #GB
 ```
 
-This section describes the Nested ESXi Network that will be used for VCF configuration, this CIDR definition should match the network specified in `$VMNetwork` variable.
+This section describes the Nested ESXi Networks that will be used for VCF configuration. For the ESXI management network, the CIDR definition should match the network specified in `$VMNetwork` variable.
 ```console
 $NestedESXiManagementNetworkCidr = "172.17.31.0/24"
+$NestedESXivMotionNetworkCidr = "172.17.32.0/24"
+$NestedESXivSANNetworkCidr = "172.17.33.0/24"
+$NestedESXiNSXTepNetworkCidr = "172.17.34.0/24"
 ```
 
 This section describes the configurations that will be used to deploy the VCSA within the Nested ESXi environment:
@@ -198,6 +227,10 @@ In the example below, I will be using a one /24 VLANs (172.17.31/0/24). The firs
 | vcf-m01-esx02.tshirts.inc   | 172.17.31.186 | ESXi Host 2    |
 | vcf-m01-esx03.tshirts.inc   | 172.17.31.187 | ESXi Host 3    |
 | vcf-m01-esx04.tshirts.inc   | 172.17.31.188 | ESXi Host 4    |
+| vcf-m01-esx05.tshirts.inc   | 172.17.31.189 | ESXi Host 5    |
+| vcf-m01-esx06.tshirts.inc   | 172.17.31.190 | ESXi Host 6    |
+| vcf-m01-esx07.tshirts.inc   | 172.17.31.191 | ESXi Host 7    |
+| vcf-m01-esx08.tshirts.inc   | 172.17.31.192 | ESXi Host 8    |
 
 ### Lab Deployment Script
 
@@ -209,30 +242,40 @@ Here is an example output of a complete deployment:
 
 ![](screenshots/screenshot-2.png)
 
-**Note:** Deployment time will vary based on underlying physical infrastructure resources. In my lab, this took ~12min to complete.
+**Note:** Deployment time will vary based on underlying physical infrastructure resources. In my lab, this took ~19min to complete.
 
-Once completed, you will end up with four Nested ESXi VM and VMware Cloud Builder VMs which is placed into a vApp.
+Once completed, you will end up with eight Nested ESXi VM and VMware Cloud Builder VMs which is placed into a vApp.
 
 ![](screenshots/screenshot-3.png)
 
-At the end of the deployment, an automatically generated VMware Cloud Foundation JSON configuration failed named `vcf-config.json` will be saved in the current working directory. This will be used as input to deploy your SDDC using the Cloud Builder interface.
+### Deploy VCF Management Domain
 
-### Deploy VMware Cloud Foundation
+By default, the script will auto generate the required VCF Management Domain deployment file `vcf-mgmt.json` based off of your specific deployment and save that into the current working directory. Additionally, the VCF deployment file will automatically be submitted to SDDC Manager and begin the VCF Bringup process, which in previous versions of this script was performed manually by the end user.
 
-Step 1 - Open a browser to the FQDN of the Cloud Builder VM and select `VMware Cloud Foundation` as the infrastructure to deploy and accept the EULA
-
-Step 2 - Ignore the Download Workbook option and click next until you are presented with the option to upload VCF JSON configuration file which was generated as part of the initial deployment. Click next to proceed to the validation phase.
+Now you can just open a web browser to your SDDC Manager deployment and monitor the VCF Bringup progress.
 
 ![](screenshots/screenshot-4.png)
 
-Step 3 - The validation phase should take a few minutes to complete and it is expected to have at least three warnings as shown in the screenshot below. At this point, you can acknowledge the warning and then click next which proceed with deploying and configuring VCF.
+**Note:** If you wish to disable the VCF Bringup process, simply search for the variable named `$startVCFBringup` in the script and change the value to 0.
 
-![](screenshots/screenshot-5.png)
-
-The deployment and configuration can take up to several hours to complete depending on the resources of your underlying hardware. In this example, the deployment took about 1hr and 45 minutes to complete and you should see a success message as shown below.
+The deployment and configuration can take up to several hours to complete depending on the resources of your underlying hardware. In this example, the deployment took about ~1.5 to complete and you should see a success message as shown below.
 
 ![](screenshots/screenshot-6.png)
 
-Step 4 - Click on the Finish button which should prompt you to login to SDDC Manager. You will need to use `administrator@vsphere.local` credentials that you had configured within the deployment script for the deployed vCenter Server.
+Click on the Finish button which should prompt you to login to SDDC Manager. You will need to use `administrator@vsphere.local` credentials that you had configured within the deployment script for the deployed vCenter Server.
 
 ![](screenshots/screenshot-7.png)
+
+### Deploy VCF Workload Domain
+
+By default, the script will auto generate the VCF Workload Domain host commission file `vcf-commission-host.json` based off of your specific deployment and save that into the current working directory.
+
+Once the VCF Management Domain has been deployed, you can login to SDDC Manager UI and under `Inventory->Hosts`, click on the `COMMISSION HOSTS` button and upload the generated JSON configuration file.
+
+**Note:** There is currently a different JSON schema between the SDDC Manager UI and API for host commission and the generated JSON file can only be used by SDDC Manager UI. For the API, you need to make some changes to the file including replacing the networkPoolName with the correct networkPoolId. For more details, please refer to the JSON format in the [VCF Host Commission API]([text](https://developer.vmware.com/apis/vcf/latest/v1/hosts/post/))
+
+![](screenshots/screenshot-8.png)
+
+Once the ESXi hosts have been added to SDDC Manager, then you can perform a manual VCF Workload Domain deployment using either the SDDC Manager UI or API.
+
+![](screenshots/screenshot-9.png)
