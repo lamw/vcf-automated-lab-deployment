@@ -60,13 +60,13 @@ You are now ready to get your VCF on! 😁
 * Resource Requirements
     * Compute
         * Ability to provision VMs with up to 8 vCPU
-        * Ability to provision up to 192 GB of memory
+        * Ability to provision up to 384 GB of memory
         * DRS-enabled Cluster (not required but vApp creation will not be possible)
     * Network
         * 1 x Standard or Distributed Portgroup (routable) to deploy all VMs (VCSA, NSX-T Manager & NSX-T Edge)
            * 13 x IP Addresses for Cloud Builder, SDDC Manager, VCSA, ESXi and NSX-T VMs
     * Storage
-        * Ability to provision up to 500GB of storage
+        * Ability to provision up to 1.25 TB of storage
 
         **Note:** For detailed requirements, plesae refer to the official document [here](https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-EE236215-DA4D-4579-8BEB-A693D1882C77.html)
 
