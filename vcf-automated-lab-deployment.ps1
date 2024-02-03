@@ -19,7 +19,8 @@ $NSXLicense = "FILL-ME-IN"
 # VCF Configurations
 $VCFManagementDomainPoolName = "vcf-m01-rp01"
 $VCFManagementDomainJSONFile = "vcf-mgmt.json"
-$VCFWorkloadDomainJSONFile = "vcf-commission-host.json"
+$VCFWorkloadDomainUIJSONFile = "vcf-commission-host-ui.json"
+$VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 
 # Cloud Builder Configurations
 $CloudbuilderVMName = "vcf-m01-cb01"
@@ -53,12 +54,19 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
     "vcf-m01-esx08"   = "172.17.31.192"
 }
 
-# Nested ESXi VM Resources
-$NestedESXivCPU = "8"
-$NestedESXivMEM = "48" #GB
-$NestedESXiCachingvDisk = "4" #GB
-$NestedESXiCapacityvDisk = "120" #GB
-$NestedESXiBootDisk = "32" #GB
+# Nested ESXi VM Resources for Management Domain
+$NestedESXiMGMTvCPU = "8"
+$NestedESXiMGMTvMEM = "78" #GB
+$NestedESXiMGMTCachingvDisk = "4" #GB
+$NestedESXiMGMTCapacityvDisk = "250" #GB
+$NestedESXiMGMTBootDisk = "32" #GB
+
+# Nested ESXi VM Resources for Workload Domain
+$NestedESXiWLDvCPU = "8"
+$NestedESXiWLDvMEM = "24" #GB
+$NestedESXiWLDCachingvDisk = "4" #GB
+$NestedESXiWLDCapacityvDisk = "75" #GB
+$NestedESXiWLDBootDisk = "32" #GB
 
 # ESXi Network Configuration
 $NestedESXiManagementNetworkCidr = "172.17.31.0/24" # should match $VMNetwork configuration
@@ -177,11 +185,21 @@ if($confirmDeployment -eq 1) {
     Write-Host -NoNewline -ForegroundColor Green "IP Address: "
     Write-Host -ForegroundColor White $CloudbuilderIP
 
-    Write-Host -ForegroundColor Yellow "`n---- vESXi Configuration for VCF Management Domain ----"
-    Write-Host -NoNewline -ForegroundColor Green "# of Nested ESXi VMs: "
-    Write-Host -ForegroundColor White $NestedESXiHostnameToIPsForManagementDomain.count
-    Write-Host -NoNewline -ForegroundColor Green "IP Address(s): "
-    Write-Host -ForegroundColor White $NestedESXiHostnameToIPsForManagementDomain.Values
+    if($deployNestedESXiVMsForMgmt -eq 1) {
+        Write-Host -ForegroundColor Yellow "`n---- vESXi Configuration for VCF Management Domain ----"
+        Write-Host -NoNewline -ForegroundColor Green "# of Nested ESXi VMs: "
+        Write-Host -ForegroundColor White $NestedESXiHostnameToIPsForManagementDomain.count
+        Write-Host -NoNewline -ForegroundColor Green "IP Address(s): "
+        Write-Host -ForegroundColor White $NestedESXiHostnameToIPsForManagementDomain.Values
+        Write-Host -NoNewline -ForegroundColor Green "vCPU: "
+        Write-Host -ForegroundColor White $NestedESXiMGMTvCPU
+        Write-Host -NoNewline -ForegroundColor Green "vMEM: "
+        Write-Host -ForegroundColor White "$NestedESXiMGMTvMEM GB"
+        Write-Host -NoNewline -ForegroundColor Green "Caching VMDK: "
+        Write-Host -ForegroundColor White "$NestedESXiMGMTCachingvDisk GB"
+        Write-Host -NoNewline -ForegroundColor Green "Capacity VMDK: "
+        Write-Host -ForegroundColor White "$NestedESXiMGMTCapacityvDisk GB"
+    }
 
     if($deployNestedESXiVMsForWLD -eq 1) {
         Write-Host -ForegroundColor Yellow "`n---- vESXi Configuration for VCF Workload Domain ----"
@@ -189,18 +207,17 @@ if($confirmDeployment -eq 1) {
         Write-Host -ForegroundColor White $NestedESXiHostnameToIPsForWorkloadDomain.count
         Write-Host -NoNewline -ForegroundColor Green "IP Address(s): "
         Write-Host -ForegroundColor White $NestedESXiHostnameToIPsForWorkloadDomain.Values
+        Write-Host -NoNewline -ForegroundColor Green "vCPU: "
+        Write-Host -ForegroundColor White $NestedESXiWLDvCPU
+        Write-Host -NoNewline -ForegroundColor Green "vMEM: "
+        Write-Host -ForegroundColor White "$NestedESXiWLDvMEM GB"
+        Write-Host -NoNewline -ForegroundColor Green "Caching VMDK: "
+        Write-Host -ForegroundColor White "$NestedESXiWLDCachingvDisk GB"
+        Write-Host -NoNewline -ForegroundColor Green "Capacity VMDK: "
+        Write-Host -ForegroundColor White "$NestedESXiWLDCapacityvDisk GB"
     }
 
-    Write-Host ""
-    Write-Host -NoNewline -ForegroundColor Green "vCPU: "
-    Write-Host -ForegroundColor White $NestedESXivCPU
-    Write-Host -NoNewline -ForegroundColor Green "vMEM: "
-    Write-Host -ForegroundColor White "$NestedESXivMEM GB"
-    Write-Host -NoNewline -ForegroundColor Green "Caching VMDK: "
-    Write-Host -ForegroundColor White "$NestedESXiCachingvDisk GB"
-    Write-Host -NoNewline -ForegroundColor Green "Capacity VMDK: "
-    Write-Host -ForegroundColor White "$NestedESXiCapacityvDisk GB"
-    Write-Host -NoNewline -ForegroundColor Green "Netmask "
+    Write-Host -NoNewline -ForegroundColor Green "`nNetmask "
     Write-Host -ForegroundColor White $VMNetmask
     Write-Host -NoNewline -ForegroundColor Green "Gateway: "
     Write-Host -ForegroundColor White $VMGateway
@@ -261,15 +278,15 @@ if($deployNestedESXiVMsForMgmt -eq 1) {
         $vm | New-AdvancedSetting -name "ethernet3.filter4.name" -value "dvfilter-maclearn" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
         $vm | New-AdvancedSetting -Name "ethernet3.filter4.onFailure" -value "failOpen" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
 
-        My-Logger "Updating vCPU Count to $NestedESXivCPU & vMEM to $NestedESXivMEM GB ..."
-        Set-VM -Server $viConnection -VM $vm -NumCpu $NestedESXivCPU -CoresPerSocket $NestedESXivCPU -MemoryGB $NestedESXivMEM -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        My-Logger "Updating vCPU Count to $NestedESXiMGMTvCPU & vMEM to $NestedESXiMGMTvMEM GB ..."
+        Set-VM -Server $viConnection -VM $vm -NumCpu $NestedESXiMGMTvCPU -CoresPerSocket $NestedESXiMGMTvCPU -MemoryGB $NestedESXiMGMTvMEM -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
-        My-Logger "Updating vSAN Cache VMDK size to $NestedESXiCachingvDisk GB & Capacity VMDK size to $NestedESXiCapacityvDisk GB ..."
-        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 2" | Set-HardDisk -CapacityGB $NestedESXiCachingvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
-        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 3" | Set-HardDisk -CapacityGB $NestedESXiCapacityvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        My-Logger "Updating vSAN Cache VMDK size to $NestedESXiMGMTCachingvDisk GB & Capacity VMDK size to $NestedESXiMGMTCapacityvDisk GB ..."
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 2" | Set-HardDisk -CapacityGB $NestedESXiMGMTCachingvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 3" | Set-HardDisk -CapacityGB $NestedESXiMGMTCapacityvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
-        My-Logger "Updating vSAN Boot Disk size to $NestedESXiBootDisk GB ..."
-        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 1" | Set-HardDisk -CapacityGB $NestedESXiBootDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        My-Logger "Updating vSAN Boot Disk size to $NestedESXiMGMTBootDisk GB ..."
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 1" | Set-HardDisk -CapacityGB $NestedESXiMGMTBootDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
         My-Logger "Powering On $vmname ..."
         $vm | Start-Vm -RunAsync | Out-Null
@@ -309,15 +326,15 @@ if($deployNestedESXiVMsForWLD -eq 1) {
         $vm | New-AdvancedSetting -name "ethernet3.filter4.name" -value "dvfilter-maclearn" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
         $vm | New-AdvancedSetting -Name "ethernet3.filter4.onFailure" -value "failOpen" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
 
-        My-Logger "Updating vCPU Count to $NestedESXivCPU & vMEM to $NestedESXivMEM GB ..."
-        Set-VM -Server $viConnection -VM $vm -NumCpu $NestedESXivCPU -CoresPerSocket $NestedESXivCPU -MemoryGB $NestedESXivMEM -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        My-Logger "Updating vCPU Count to $NestedESXiWLDvCPU & vMEM to $NestedESXiWLDvMEM GB ..."
+        Set-VM -Server $viConnection -VM $vm -NumCpu $NestedESXiWLDvCPU -CoresPerSocket $NestedESXiWLDvCPU -MemoryGB $NestedESXiWLDvMEM -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
-        My-Logger "Updating vSAN Cache VMDK size to $NestedESXiCachingvDisk GB & Capacity VMDK size to $NestedESXiCapacityvDisk GB ..."
-        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 2" | Set-HardDisk -CapacityGB $NestedESXiCachingvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
-        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 3" | Set-HardDisk -CapacityGB $NestedESXiCapacityvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        My-Logger "Updating vSAN Cache VMDK size to $NestedESXiWLDCachingvDisk GB & Capacity VMDK size to $NestedESXiWLDCapacityvDisk GB ..."
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 2" | Set-HardDisk -CapacityGB $NestedESXiWLDCachingvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 3" | Set-HardDisk -CapacityGB $NestedESXiWLDCapacityvDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
-        My-Logger "Updating vSAN Boot Disk size to $NestedESXiBootDisk GB ..."
-        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 1" | Set-HardDisk -CapacityGB $NestedESXiBootDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        My-Logger "Updating vSAN Boot Disk size to $NestedESXiWLDBootDisk GB ..."
+        Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 1" | Set-HardDisk -CapacityGB $NestedESXiWLDBootDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
         My-Logger "Powering On $vmname ..."
         $vm | Start-Vm -RunAsync | Out-Null
@@ -742,27 +759,38 @@ if($generateMgmJson -eq 1) {
 }
 
 if($generateWldHostCommissionJson -eq 1) {
-    My-Logger "Generating Cloud Builder VCF Workload Domain Host Commission file $VCFWorkloadDomainJSONFile"
+    My-Logger "Generating Cloud Builder VCF Workload Domain Host Commission file $VCFWorkloadDomainUIJSONFile and $VCFWorkloadDomainAPIJSONFile for SDDC Manager UI and API"
 
-    $commissionHosts= @()
+    $commissionHostsUI= @()
+    $commissionHostsAPI= @()
     $NestedESXiHostnameToIPsForWorkloadDomain.GetEnumerator() | Sort-Object -Property Value | Foreach-Object {
         $hostFQDN = $_.Key + "." + $VMDomain
 
-        $tmp = [ordered] @{
+        $tmp1 = [ordered] @{
             "hostfqdn" = $hostFQDN;
             "username" = "root";
             "password" = $VMPassword;
             "networkPoolName" = "$VCFManagementDomainPoolName";
             "storageType" = "VSAN";
         }
-        $commissionHosts += $tmp
+        $commissionHostsUI += $tmp1
+
+        $tmp2 = [ordered] @{
+            "fqdn" = $hostFQDN;
+            "username" = "root";
+            "password" = $VMPassword;
+            "networkPoolId" = "TBD";
+            "storageType" = "VSAN";
+        }
+        $commissionHostsAPI += $tmp2
     }
 
-    $vcfCommissionHostConfig = @{
-        "hostsSpec" = $commissionHosts
+    $vcfCommissionHostConfigUI = @{
+        "hostsSpec" = $commissionHostsUI
     }
 
-    $vcfCommissionHostConfig | ConvertTo-Json -Depth 2 | Out-File -LiteralPath $VCFWorkloadDomainJSONFile
+    $vcfCommissionHostConfigUI | ConvertTo-Json -Depth 2 | Out-File -LiteralPath $VCFWorkloadDomainUIJSONFile
+    $commissionHostsAPI | ConvertTo-Json -Depth 2 | Out-File -LiteralPath $VCFWorkloadDomainAPIJSONFile
 }
 
 if($startVCFBringup -eq 1) {

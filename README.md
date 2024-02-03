@@ -23,6 +23,9 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **02/03/2024**
+  * Added support to independently define resources (cpu, memory and storage) for Nested ESXi VMs for use with Management and/or Workload Domains
+  * Automatically generate VCF Workload Domain host commission JSON file (vcf-commission-host-api.json) for use with SDDC Manager API (UI will now include `-ui` in the filename)
 * **01/29/2024**
   * Added support for [VCF 5.1]([text](https://blogs.vmware.com/cloud-foundation/2023/11/07/announcing-availability-of-vmware-cloud-foundation-5-1/))
   * Automatically start VCF Management Domain bringup in SDDC Manager using generated JSON deployment file (vcf-mgmt.json)
@@ -102,11 +105,12 @@ $VSANLicense = "FILL-ME-IN"
 $NSXLicense = "FILL-ME-IN"
 ```
 
-This section defines the VCF configurations including the name of the output files for deploying the VCF Management Domain along with additional ESXi hosts to commission for use for VCF Workload Domain deployment. The default values are sufficient.
+This section defines the VCF configurations including the name of the output files for deploying the VCF Management Domain along with additional ESXi hosts to commission for use with either SDDC Manager UI or API for VCF Workload Domain deployment. The default values are sufficient.
 ```console
 $VCFManagementDomainPoolName = "vcf-m01-rp01"
 $VCFManagementDomainJSONFile = "vcf-mgmt.json"
-$VCFWorkloadDomainJSONFile = "vcf-commission-host.json"
+$VCFWorkloadDomainUIJSONFile = "vcf-commission-host-ui.json"
+$VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 ```
 
 This section describes the configuration for the VMware Cloud Builder virtual appliance:
@@ -151,13 +155,21 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
 
 **Note:** A VCF Management Domain can be deployed with just a single Nested ESXi VM. For more details, please see this [blog post](https://williamlam.com/2023/02/vmware-cloud-foundation-with-a-single-esxi-host-for-management-domain.html) for the required tweaks.
 
-This section describes the minimum amount resources that will need to be allocated to each of the Nested ESXi VM(s) for proper VCF configuration Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
+This section describes the amount resources to allocate to either the Nested ESXi VM(s) for use with Managemen Domain as well as Workload Domain (if you choose to deploy.) Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
 ```console
-$NestedESXivCPU = "8"
-$NestedESXivMEM = "48" #GB
-$NestedESXiCachingvDisk = "4" #GB
-$NestedESXiCapacityvDisk = "120" #GB
-$NestedESXiBootDisk = "32" #GB
+# Nested ESXi VM Resources for Management Domain
+$NestedESXiMGMTvCPU = "8"
+$NestedESXiMGMTvMEM = "78" #GB
+$NestedESXiMGMTCachingvDisk = "4" #GB
+$NestedESXiMGMTCapacityvDisk = "200" #GB
+$NestedESXiMGMTBootDisk = "32" #GB
+
+# Nested ESXi VM Resources for Workload Domain
+$NestedESXiWLDvCPU = "8"
+$NestedESXiWLDvMEM = "24" #GB
+$NestedESXiWLDCachingvDisk = "4" #GB
+$NestedESXiWLDCapacityvDisk = "75" #GB
+$NestedESXiWLDBootDisk = "32" #GB
 ```
 
 This section describes the Nested ESXi Networks that will be used for VCF configuration. For the ESXI management network, the CIDR definition should match the network specified in `$VMNetwork` variable.
