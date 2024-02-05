@@ -23,15 +23,15 @@ $VCFWorkloadDomainUIJSONFile = "vcf-commission-host-ui.json"
 $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 
 # Cloud Builder Configurations
-$CloudbuilderVMName = "vcf-m01-cb01"
-$CloudbuilderHostname = "vcf-m01-cb01.tshirts.inc"
+$CloudbuilderVMHostname = "vcf-m01-cb01"
+$CloudbuilderFQDN = "vcf-m01-cb01.tshirts.inc"
 $CloudbuilderIP = "172.17.31.180"
 $CloudbuilderAdminUsername = "admin"
 $CloudbuilderAdminPassword = "VMw@re123!"
 $CloudbuilderRootPassword = "VMw@re123!"
 
 # SDDC Manager Configuration
-$SddcManagerName = "vcf-m01-sddcm01"
+$SddcManagerHostname = "vcf-m01-sddcm01"
 $SddcManagerIP = "172.17.31.181"
 $SddcManagerVcfPassword = "VMware1!VMware1!"
 $SddcManagerRootPassword = "VMware1!VMware1!"
@@ -55,7 +55,7 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
 }
 
 # Nested ESXi VM Resources for Management Domain
-$NestedESXiMGMTvCPU = "8"
+$NestedESXiMGMTvCPU = "12"
 $NestedESXiMGMTvMEM = "78" #GB
 $NestedESXiMGMTCachingvDisk = "4" #GB
 $NestedESXiMGMTCapacityvDisk = "250" #GB
@@ -81,9 +81,9 @@ $VCSARootPassword = "VMware1!"
 $VCSASSOPassword = "VMware1!"
 
 # NSX Configuration
-$NSXManagerVIPName = "vcf-m01-nsx01"
+$NSXManagerVIPHostname = "vcf-m01-nsx01"
 $NSXManagerVIPIP = "172.17.31.183"
-$NSXManagerNode1Name = "vcf-m01-nsx01a"
+$NSXManagerNode1Hostname = "vcf-m01-nsx01a"
 $NSXManagerNode1IP = "172.17.31.184"
 $NSXRootPassword = "VMware1!VMware1!"
 $NSXAdminPassword = "VMware1!VMware1!"
@@ -268,9 +268,15 @@ if($deployNestedESXiVMsForMgmt -eq 1) {
         $vm = Import-VApp -Source $NestedESXiApplianceOVA -OvfConfiguration $ovfconfig -Name $VMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
 
         My-Logger "Adding vmnic2/vmnic3 to Nested ESXi VMs ..."
-        $vmPortGroup = Get-VDPortgroup -Name $VMNetwork
-        New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
-        New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        $vmPortGroup = Get-VirtualNetwork -Name $VMNetwork -Location ($cluster | Get-Datacenter)
+        if($vmPortGroup.NetworkType -eq "Distributed") {
+            $vmPortGroup = Get-VDPortgroup -Name $VMNetwork
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        } else {
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -NetworkName $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -NetworkName $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        }
 
         $vm | New-AdvancedSetting -name "ethernet2.filter4.name" -value "dvfilter-maclearn" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
         $vm | New-AdvancedSetting -Name "ethernet2.filter4.onFailure" -value "failOpen" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
@@ -316,9 +322,15 @@ if($deployNestedESXiVMsForWLD -eq 1) {
         $vm = Import-VApp -Source $NestedESXiApplianceOVA -OvfConfiguration $ovfconfig -Name $VMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
 
         My-Logger "Adding vmnic2/vmnic3 to Nested ESXi VMs ..."
-        $vmPortGroup = Get-VDPortgroup -Name $VMNetwork
-        New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
-        New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        $vmPortGroup = Get-VirtualNetwork -Name $VMNetwork -Location ($cluster | Get-Datacenter)
+        if($vmPortGroup.NetworkType -eq "Distributed") {
+            $vmPortGroup = Get-VDPortgroup -Name $VMNetwork
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -Portgroup $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        } else {
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -NetworkName $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+            New-NetworkAdapter -VM $vm -Type Vmxnet3 -NetworkName $vmPortGroup -StartConnected -confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
+        }
 
         $vm | New-AdvancedSetting -name "ethernet2.filter4.name" -value "dvfilter-maclearn" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
         $vm | New-AdvancedSetting -Name "ethernet2.filter4.onFailure" -value "failOpen" -confirm:$false -ErrorAction SilentlyContinue | Out-File -Append -LiteralPath $verboseLogFile
@@ -346,7 +358,7 @@ if($deployCloudBuilder -eq 1) {
 
     $networkMapLabel = ($ovfconfig.ToHashTable().keys | where {$_ -Match "NetworkMapping"}).replace("NetworkMapping.","").replace("-","_").replace(" ","_")
     $ovfconfig.NetworkMapping.$networkMapLabel.value = $VMNetwork
-    $ovfconfig.common.guestinfo.hostname.value = $CloudbuilderHostname
+    $ovfconfig.common.guestinfo.hostname.value = $CloudbuilderFQDN
     $ovfconfig.common.guestinfo.ip0.value = $CloudbuilderIP
     $ovfconfig.common.guestinfo.netmask0.value = $VMNetmask
     $ovfconfig.common.guestinfo.gateway.value = $VMGateway
@@ -358,10 +370,10 @@ if($deployCloudBuilder -eq 1) {
     $ovfconfig.common.guestinfo.ADMIN_PASSWORD.value = $CloudbuilderAdminPassword
     $ovfconfig.common.guestinfo.ROOT_PASSWORD.value = $CloudbuilderRootPassword
 
-    My-Logger "Deploying Cloud Builder VM $CloudbuilderVMName ..."
-    $vm = Import-VApp -Source $CloudBuilderOVA -OvfConfiguration $ovfconfig -Name $CloudbuilderVMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
+    My-Logger "Deploying Cloud Builder VM $CloudbuilderVMHostname ..."
+    $vm = Import-VApp -Source $CloudBuilderOVA -OvfConfiguration $ovfconfig -Name $CloudbuilderVMHostname -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
 
-    My-Logger "Powering On $CloudbuilderVMName ..."
+    My-Logger "Powering On $CloudbuilderVMHostname ..."
     $vm | Start-Vm -RunAsync | Out-Null
 }
 
@@ -394,8 +406,8 @@ if($moveVMsIntovApp -eq 1) {
         }
 
         if($deployCloudBuilder -eq 1) {
-            $cloudBuilderVM = Get-VM -Name $CloudbuilderVMName -Server $viConnection -Location $cluster | where{$_.ResourcePool.Id -eq $rp.Id}
-            My-Logger "Moving $CloudbuilderVMName into $VAppName vApp ..."
+            $cloudBuilderVM = Get-VM -Name $CloudbuilderVMHostname -Server $viConnection -Location $cluster | where{$_.ResourcePool.Id -eq $rp.Id}
+            My-Logger "Moving $CloudbuilderVMHostname into $VAppName vApp ..."
             Move-VM -VM $cloudBuilderVM -Server $viConnection -Destination $VApp -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
         }
 
@@ -410,19 +422,22 @@ if($generateMgmJson -eq 1) {
     if($SeparateNSXSwitch) { $useNSX = "false" } else { $useNSX = "true" }
 
     $esxivMotionNetwork = $NestedESXivMotionNetworkCidr.split("/")[0]
-    $esxivMotionGateway = $esxivMotionNetwork.replace(".0",".1")
-    $esxivMotionStart = $esxivMotionNetwork.replace(".0",".101")
-    $esxivMotionEnd = $esxivMotionNetwork.replace(".0",".118")
+    $esxivMotionNetworkOctects = $esxivMotionNetwork.split(".")
+    $esxivMotionGateway = ($esxivMotionNetworkOctects[0..2] -join '.') + ".1"
+    $esxivMotionStart = ($esxivMotionNetworkOctects[0..2] -join '.') + ".101"
+    $esxivMotionEnd = ($esxivMotionNetworkOctects[0..2] -join '.') + ".118"
 
     $esxivSANNetwork = $NestedESXivSANNetworkCidr.split("/")[0]
-    $esxivSANGateway = $esxivSANNetwork.replace(".0",".1")
-    $esxivSANStart = $esxivSANNetwork.replace(".0",".101")
-    $esxivSANEnd = $esxivSANNetwork.replace(".0",".118")
+    $esxivSANNetworkOctects = $esxivSANNetwork.split(".")
+    $esxivSANGateway = ($esxivSANNetworkOctects[0..2] -join '.') + ".1"
+    $esxivSANStart = ($esxivSANNetworkOctects[0..2] -join '.') + ".101"
+    $esxivSANEnd = ($esxivSANNetworkOctects[0..2] -join '.') + ".118"
 
     $esxiNSXTepNetwork = $NestedESXiNSXTepNetworkCidr.split("/")[0]
-    $esxiNSXTepGateway = $esxiNSXTepNetwork.replace(".0",".1")
-    $esxiNSXTepStart = $esxiNSXTepNetwork.replace(".0",".101")
-    $esxiNSXTepEnd = $esxiNSXTepNetwork.replace(".0",".118")
+    $esxiNSXTepNetworkOctects = $esxiNSXTepNetwork.split(".")
+    $esxiNSXTepGateway = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".1"
+    $esxiNSXTepStart = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".101"
+    $esxiNSXTepEnd = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".118"
 
     $vcfStartConfig1 = @"
 {
@@ -435,7 +450,7 @@ if($generateMgmJson -eq 1) {
         },
         "ipAddress": "$SddcManagerIP",
         "netmask": "$VMNetmask",
-        "hostname": "$SddcManagerName",
+        "hostname": "$SddcManagerHostname",
         "rootUserCredentials": {
         "username": "root",
         "password": "$SddcManagerRootPassword"
@@ -506,7 +521,7 @@ if($generateMgmJson -eq 1) {
         "nsxtManagerSize": "small",
         "nsxtManagers": [
         {
-            "hostname": "$NSXManagerNode1Name",
+            "hostname": "$NSXManagerNode1Hostname",
             "ip": "$NSXManagerNode1IP"
         }
         ],
@@ -524,7 +539,7 @@ if($generateMgmJson -eq 1) {
             "networkName": "netName-vlan"
         },
         "vip": "$NSXManagerVIPIP",
-        "vipFqdn": "$NSXManagerVIPName",
+        "vipFqdn": "$NSXManagerVIPHostname",
         "nsxtLicense": "$NSXLicense",
         "transportVlanId": 2005,
         "ipAddressPoolSpec" : {
@@ -837,7 +852,7 @@ if($startVCFBringup -eq 1) {
 
 if($startVCFBringup -eq 1 -and $uploadVCFNotifyScript -eq 1) {
     if(Test-Path $srcNotificationScript) {
-        $cbVM = Get-VM -Server $viConnection $CloudbuilderVMName
+        $cbVM = Get-VM -Server $viConnection $CloudbuilderFQDN
 
         My-Logger "Uploading VCF notification script $srcNotificationScript to $dstNotificationScript on Cloud Builder appliance ..."
         Copy-VMGuestFile -Server $viConnection -VM $cbVM -Source $srcNotificationScript -Destination $dstNotificationScript -LocalToGuest -GuestUser "root" -GuestPassword $CloudbuilderRootPassword | Out-Null

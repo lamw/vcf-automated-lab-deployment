@@ -23,6 +23,9 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **02/05/2024**
+  * Improve substitution code for ESXi vMotion, vSAN & NSX CIDR network
+  * Renamed variables (`$CloudbuilderVMName`,`$CloudbuilderHostname`,`$SddcManagerName`,`$NSXManagerVIPName`,`$NSXManagerNode1Name`) to (`$CloudbuilderVMHostname`,`$CloudbuilderFQDN`,`$SddcManagerHostname`,`$NSXManagerVIPHostname`,`$NSXManagerNode1Hostname`) to better represent the expected value (Hostname and FQDN)
 * **02/03/2024**
   * Added support to independently define resources (cpu, memory and storage) for Nested ESXi VMs for use with Management and/or Workload Domains
   * Automatically generate VCF Workload Domain host commission JSON file (vcf-commission-host-api.json) for use with SDDC Manager API (UI will now include `-ui` in the filename)
@@ -115,8 +118,8 @@ $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 
 This section describes the configuration for the VMware Cloud Builder virtual appliance:
 ```console
-$CloudbuilderVMName = "vcf-m01-cb01"
-$CloudbuilderHostname = "vcf-m01-cb01.tshirts.inc"
+$CloudbuilderVMHostname = "vcf-m01-cb01"
+$CloudbuilderFQDN = "vcf-m01-cb01.tshirts.inc"
 $CloudbuilderIP = "172.17.31.180"
 $CloudbuilderAdminUsername = "admin"
 $CloudbuilderAdminPassword = "VMw@re123!"
@@ -125,7 +128,7 @@ $CloudbuilderRootPassword = "VMw@re123!"
 
 This section describes the configuration that will be used to deploy SDDC Manager within the Nested ESXi environment:
 ```console
-$SddcManagerName = "vcf-m01-sddcm01"
+$SddcManagerHostname = "vcf-m01-sddcm01"
 $SddcManagerIP = "172.17.31.181"
 $SddcManagerVcfPassword = "VMware1!VMware1!"
 $SddcManagerRootPassword = "VMware1!VMware1!"
@@ -158,7 +161,7 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
 This section describes the amount resources to allocate to either the Nested ESXi VM(s) for use with Managemen Domain as well as Workload Domain (if you choose to deploy.) Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
 ```console
 # Nested ESXi VM Resources for Management Domain
-$NestedESXiMGMTvCPU = "8"
+$NestedESXiMGMTvCPU = "12"
 $NestedESXiMGMTvMEM = "78" #GB
 $NestedESXiMGMTCachingvDisk = "4" #GB
 $NestedESXiMGMTCapacityvDisk = "200" #GB
@@ -190,9 +193,9 @@ $VCSASSOPassword = "VMware1!"
 
 This section describes the configurations that will be used to deploy the NSX-T infrastructure within the Nested ESXi environment:
 ```console
-$NSXManagerVIPName = "vcf-m01-nsx01"
+$NSXManagerVIPHostname = "vcf-m01-nsx01"
 $NSXManagerVIPIP = "172.17.31.183"
-$NSXManagerNode1Name = "vcf-m01-nsx01a"
+$NSXManagerNode1Hostname = "vcf-m01-nsx01a"
 $NSXManagerNode1IP = "172.17.31.184"
 $NSXRootPassword = "VMware1!VMware1!"
 $NSXAdminPassword = "VMware1!VMware1!"
