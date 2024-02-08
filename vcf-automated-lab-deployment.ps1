@@ -181,7 +181,7 @@ if($confirmDeployment -eq 1) {
 
     Write-Host -ForegroundColor Yellow "`n---- Cloud Builder Configuration ----"
     Write-Host -NoNewline -ForegroundColor Green "Hostname: "
-    Write-Host -ForegroundColor White $CloudbuilderHostname
+    Write-Host -ForegroundColor White $CloudbuilderVMHostname
     Write-Host -NoNewline -ForegroundColor Green "IP Address: "
     Write-Host -ForegroundColor White $CloudbuilderIP
 
@@ -847,7 +847,7 @@ if($startVCFBringup -eq 1) {
         Credential = $cred
     }
     $bringupAPIReturn = Invoke-RestMethod @bringupAPIParms -SkipCertificateCheck
-    My-Logger "Open browser to the VMware Cloud Builder UI (https://${CloudbuilderHostname}) to monitor deployment progress ..."
+    My-Logger "Open browser to the VMware Cloud Builder UI (https://${CloudbuilderFQDN}) to monitor deployment progress ..."
 }
 
 if($startVCFBringup -eq 1 -and $uploadVCFNotifyScript -eq 1) {
