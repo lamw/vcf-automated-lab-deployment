@@ -23,6 +23,8 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **02/08/2024**
+  * Added supplemental script `vcf-automated-workload-domain-deployment.ps1` to automate the deployment of Workload Domain
 * **02/05/2024**
   * Improve substitution code for ESXi vMotion, vSAN & NSX CIDR network
   * Renamed variables (`$CloudbuilderVMName`,`$CloudbuilderHostname`,`$SddcManagerName`,`$NSXManagerVIPName`,`$NSXManagerNode1Name`) to (`$CloudbuilderVMHostname`,`$CloudbuilderFQDN`,`$SddcManagerHostname`,`$NSXManagerVIPHostname`,`$NSXManagerNode1Hostname`) to better represent the expected value (Hostname and FQDN)
@@ -65,16 +67,17 @@ You are now ready to get your VCF on! 😁
   * Enable either [MAC Learning](https://williamlam.com/2018/04/native-mac-learning-in-vsphere-6-7-removes-the-need-for-promiscuous-mode-for-nested-esxi.html) or [Promiscuous Mode](https://kb.vmware.com/kb/1004099) on your physical ESXi host networking to ensure proper network connectivity for Nested ESXi workloads
 * Resource Requirements
     * Compute
-        * Ability to provision VMs with up to 8 vCPU
+        * Ability to provision VMs with up to 8 vCPU (12 vCPU required for Workload Domain deployment)
         * Ability to provision up to 384 GB of memory
         * DRS-enabled Cluster (not required but vApp creation will not be possible)
     * Network
         * 1 x Standard or Distributed Portgroup (routable) to deploy all VMs (VCSA, NSX-T Manager & NSX-T Edge)
            * 13 x IP Addresses for Cloud Builder, SDDC Manager, VCSA, ESXi and NSX-T VMs
+           * 9 x IP Addresses for Workload Domain Deployment (if applicable) for ESXi, NSX and VCSA
     * Storage
         * Ability to provision up to 1.25 TB of storage
 
-        **Note:** For detailed requirements, plesae refer to the official document [here](https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-EE236215-DA4D-4579-8BEB-A693D1882C77.html)
+        **Note:** For detailed requirements, plesae refer to the planning and preparation workbook [here](https://docs.vmware.com/en/VMware-Cloud-Foundation/5.1/vcf-planning-and-preparation-workbook.zip)
 
 * VMware Cloud Foundation 4.x or 5.x Licenses for vCenter, ESXi, vSAN and NSX-T
 
@@ -87,7 +90,7 @@ You are now ready to get your VCF on! 😁
 
 Before you can run the script, you will need to edit the script and update a number of variables to match your deployment environment. Details on each section is described below including actual values used in my home lab environment.
 
-This section describes the credentials to your physical vCenter Server in which the vSphere with Tanzu lab environment will be deployed to:
+This section describes the credentials to your physical vCenter Server in which the VCF lab environment will be deployed to:
 ```console
 $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
@@ -100,7 +103,7 @@ $NestedESXiApplianceOVA = "C:\Users\william\Desktop\VCF\Nested_ESXi7.0u1d_Applia
 $CloudBuilderOVA = "C:\Users\william\Desktop\VCF\VMware-Cloud-Builder-4.2.0.0-17559673_OVF10.ova"
 ```
 
-This section defines the number of Nested ESXi VMs to deploy along with their associated IP Address(s). The names are merely the display name of the VMs when deployed. At a minimum, you should deploy at least three hosts, but you can always add additional hosts and the script will automatically take care of provisioning them correctly.
+This section defines the licenses for each component within VCF
 ```console
 $VCSALicense = "FILL-ME-IN"
 $ESXILicense = "FILL-ME-IN"
@@ -283,7 +286,9 @@ Click on the Finish button which should prompt you to login to SDDC Manager. You
 
 ### Deploy VCF Workload Domain
 
-By default, the script will auto generate the VCF Workload Domain host commission file `vcf-commission-host.json` based off of your specific deployment and save that into the current working directory.
+## Manual Method
+
+By default, the script will auto generate the VCF Workload Domain host commission file `vcf-commission-host-ui.json` based off of your specific deployment and save that into the current working directory.
 
 Once the VCF Management Domain has been deployed, you can login to SDDC Manager UI and under `Inventory->Hosts`, click on the `COMMISSION HOSTS` button and upload the generated JSON configuration file.
 
@@ -294,3 +299,91 @@ Once the VCF Management Domain has been deployed, you can login to SDDC Manager 
 Once the ESXi hosts have been added to SDDC Manager, then you can perform a manual VCF Workload Domain deployment using either the SDDC Manager UI or API.
 
 ![](screenshots/screenshot-9.png)
+
+## Automated Method
+
+A supplemental auotomation script `vcf-automated-workload-domain-deployment.ps1` will be used to automatically standup the workfload domain. It will assume that the VCF Workload Domain host commission file `vcf-commission-host-api.json` was generated from running the initial deployent script and this file will contain a "TBD" field because the SDDC Manager API expects the Management Domain Network Pool ID, which will be retrieved automatically as part of using the additional automation.
+
+Here is an example of what will be deployed as part of Workload Domain creation:
+
+|           Hostname          | IP Address    | Function       |
+|:---------------------------:|---------------|----------------|
+| vcf-w01-vc01.tshirts.inc    | 172.17.31.120 | vCenter Server |
+| vcf-w01-nsx01.tshirts.inc   | 172.17.31.121 | NSX-T VIP      |
+| vcf-w01-nsx01a.tshirts.inc  | 172.17.31.122 | NSX-T Node 1   |
+| vcf-w01-nsx01b.tshirts.inc  | 172.17.31.122 | NSX-T Node 2   |
+| vcf-w01-nsx01c.tshirts.inc  | 172.17.31.122 | NSX-T Node 3   |
+
+
+### Configuration
+
+This section describes the credentials to your deployed SDDC Manager from setting up the Management Domain:
+```console
+$sddcManagerFQDN = "FILL_ME_IN"
+$sddcManagerUsername = "FILL_ME_IN"
+$sddcManagerPassword = "FILL_ME_IN"
+```
+
+This section defines the licenses for each component within VCF
+```console
+$ESXILicense = "FILL_ME_IN"
+$VSANLicense = "FILL_ME_IN"
+$NSXLicense = "FILL_ME_IN"
+```
+
+This section defines the Management and Workload Domain configurations, which the default values should be sufficient unless you have modified anything from the original deployment script
+```console
+$VCFManagementDomainPoolName = "vcf-m01-rp01"
+$VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
+$VCFWorkloadDomainName = "wld-w01"
+$VCFWorkloadDomainOrgName = "vcf-w01"
+```
+
+This section defines the vCenter Server configuration that will be used in the Workload Domain
+```console
+$VCSAHostname = "vcf-w01-vc01"
+$VCSAIP = "172.17.31.120"
+$VCSARootPassword = "VMware1!"
+```
+
+This section defines the NSX Manager configurations that will be used in the Workload Domain
+```console
+$NSXManagerVIPHostname = "vcf-w01-nsx01"
+$NSXManagerVIPIP = "172.17.31.121"
+$NSXManagerNode1Hostname = "vcf-m01-nsx01a"
+$NSXManagerNode1IP = "172.17.31.122"
+$NSXManagerNode2Hostname = "vcf-m01-nsx01b"
+$NSXManagerNode2IP = "172.17.31.123"
+$NSXManagerNode3Hostname = "vcf-m01-nsx01c"
+$NSXManagerNode3IP = "172.17.31.124"
+$NSXAdminPassword = "VMware1!VMware1!"
+```
+
+This section defines basic networking information that will be needed to deploy vCenter and NSX components
+```console
+$VMNetmask = "255.255.255.0"
+$VMGateway = "172.17.31.1"
+$VMDomain = "tshirts.inc"
+```
+
+### Example Deployment
+
+Here is a screenshot of running the script if all basic pre-reqs have been met and the confirmation message before starting the deployment:
+
+![](screenshots/screenshot-10.png)
+
+Here is an example output of a completed deployment:
+
+![](screenshots/screenshot-11.png)
+
+**Note:** While the script should finish ~3-4 minutes, the actual creation of the Workload Domain will take a bit longer and will depend on your resources.
+
+To monitor the progress of your Workload Domain deployment, login to the SDDC Manager UI
+
+![](screenshots/screenshot-12.png)
+
+![](screenshots/screenshot-13.png)
+
+If you now login to your vSphere UI for your Management Domain, you should see the following inventory 
+
+![](screenshots/screenshot-14.png)
