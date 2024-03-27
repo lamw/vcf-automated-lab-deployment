@@ -23,6 +23,8 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **03/27/2024**
+  * Added support for license later (aka 60 day evaluation mode)
 * **02/08/2024**
   * Added supplemental script `vcf-automated-workload-domain-deployment.ps1` to automate the deployment of Workload Domain
 * **02/05/2024**
@@ -99,16 +101,16 @@ $VIPassword = "FILL-ME-IN"
 
 This section describes the location of the files required for deployment.
 ```console
-$NestedESXiApplianceOVA = "C:\Users\william\Desktop\VCF\Nested_ESXi7.0u1d_Appliance_Template_v1.ova"
-$CloudBuilderOVA = "C:\Users\william\Desktop\VCF\VMware-Cloud-Builder-4.2.0.0-17559673_OVF10.ova"
+$NestedESXiApplianceOVA = "C:\Users\william\Desktop\VCF\Nested_ESXi8.0u2b_Appliance_Template_v1.ova"
+$CloudBuilderOVA = "C:\Users\william\Desktop\VCF\VMware-Cloud-Builder-5.1.1.0-23480823_OVF10.ova"
 ```
 
-This section defines the licenses for each component within VCF
+This section defines the licenses for each component within VCF. If you wish to use 60 day evaluational mode, you can leave these fields blank but you need to use VCF 5.1.1 or later
 ```console
-$VCSALicense = "FILL-ME-IN"
-$ESXILicense = "FILL-ME-IN"
-$VSANLicense = "FILL-ME-IN"
-$NSXLicense = "FILL-ME-IN"
+$VCSALicense = ""
+$ESXILicense = ""
+$VSANLicense = ""
+$NSXLicense = ""
 ```
 
 This section defines the VCF configurations including the name of the output files for deploying the VCF Management Domain along with additional ESXi hosts to commission for use with either SDDC Manager UI or API for VCF Workload Domain deployment. The default values are sufficient.

@@ -6,15 +6,15 @@ $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
 $VIPassword = "FILL-ME-IN"
 
-# Full Path to both the Nested ESXi 8.0U2 & Cloud Builder OVA
-$NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u2_Appliance_Template_v2.ova"
-$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.1.0.0-22688368_OVF10.ova"
+# Full Path to both the Nested ESXi 8.0U2B & Cloud Builder 5.1.1 OVA
+$NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u2b_Appliance_Template_v1.ova"
+$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.1.1.0-23480823_OVF10.ova"
 
-# VCF Required Licenses
-$VCSALicense = "FILL-ME-IN"
-$ESXILicense = "FILL-ME-IN"
-$VSANLicense = "FILL-ME-IN"
-$NSXLicense = "FILL-ME-IN"
+# VCF Licenses or leave blank for evaluation mode (requires VCF 5.1.1)
+$VCSALicense = ""
+$ESXILicense = ""
+$VSANLicense = ""
+$NSXLicense = ""
 
 # VCF Configurations
 $VCFManagementDomainPoolName = "vcf-m01-rp01"
@@ -439,9 +439,16 @@ if($generateMgmJson -eq 1) {
     $esxiNSXTepStart = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".101"
     $esxiNSXTepEnd = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".118"
 
+    if($VCSALicense -eq "" -and $ESXILicense -eq "" -and $VSANLicense -eq "" -and $NSXLicense -eq "") {
+        $EvaluationMode = "true"
+    } else {
+        $EvaluationMode = "false"
+    }
+
     $vcfStartConfig1 = @"
 {
     "skipEsxThumbprintValidation": true,
+    "deployWithoutLicenseKeys": $EvaluationMode,
     "managementPoolName": "$VCFManagementDomainPoolName",
     "sddcManagerSpec": {
         "secondUserCredentials": {
