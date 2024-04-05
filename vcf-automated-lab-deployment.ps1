@@ -656,6 +656,7 @@ if($generateMgmJson -eq 1) {
         "clusterName": "vcf-m01-cl01",
         "vcenterName": "vcenter-1",
         "clusterEvcMode": "",
+        "clusterImageEnabled": true,
         "vmFolders": {
         "MANAGEMENT": "vcf-m01-fd-mgmt",
         "NETWORKING": "vcf-m01-fd-nsx",

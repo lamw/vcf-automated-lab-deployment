@@ -26,6 +26,7 @@ You are now ready to get your VCF on! 😁
 * **04/05/2024**
   * Split of the section "describes the location" to improve understanding
   * Replace " by ' for $VIPassword variable. A string enclosed in single quotation marks is a verbatim string. The string is passed to the command exactly as you type it. No substitution is performed.
+  * When you deploy using JSON deployment method, you need to explicitly define the property clusterImageEnabled. This values was added and define to true.
 * **03/27/2024**
   * Added support for license later (aka 60 day evaluation mode)
 * **02/08/2024**
