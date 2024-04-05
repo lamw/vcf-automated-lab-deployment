@@ -25,6 +25,7 @@ You are now ready to get your VCF on! 😁
 ## Changelog
 * **04/05/2024**
   * Split of the section "describes the location" to improve understanding
+  * Replace " by ' for $VIPassword variable. A string enclosed in single quotation marks is a verbatim string. The string is passed to the command exactly as you type it. No substitution is performed.
 * **03/27/2024**
   * Added support for license later (aka 60 day evaluation mode)
 * **02/08/2024**
@@ -98,7 +99,7 @@ This section describes the credentials to your physical vCenter Server in which 
 ```console
 $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
-$VIPassword = "FILL-ME-IN"
+$VIPassword = 'FILL-ME-IN'
 ```
 
 This section describes the environment to your physical vCenter Server in which the VCF lab environment will be deployed to:

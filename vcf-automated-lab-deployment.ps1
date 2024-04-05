@@ -4,7 +4,7 @@
 # vCenter Server used to deploy VMware Cloud Foundation Lab
 $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
-$VIPassword = "FILL-ME-IN"
+$VIPassword = 'FILL-ME-IN'
 
 # Must match the environment defined on the vCenter Server where the lab will be deployed
 $VMDatacenter = "San Jose"
