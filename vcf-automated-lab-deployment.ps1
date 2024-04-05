@@ -6,6 +6,13 @@ $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
 $VIPassword = "FILL-ME-IN"
 
+# Must match the environment defined on the vCenter Server where the lab will be deployed
+$VMDatacenter = "San Jose"
+$VMCluster = "Compute Cluster"
+$VMNetwork = "sjc-comp-mgmt (1731)"
+$VMDatastore = "comp-vsanDatastore"
+$VMFolder = "VCF"
+
 # Full Path to both the Nested ESXi 8.0U2B & Cloud Builder 5.1.1 OVA
 $NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u2b_Appliance_Template_v1.ova"
 $CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.1.1.0-23480823_OVF10.ova"
@@ -90,10 +97,6 @@ $NSXAdminPassword = "VMware1!VMware1!"
 $NSXAuditPassword = "VMware1!VMware1!"
 
 # General Deployment Configuration for Nested ESXi & Cloud Builder VM
-$VMDatacenter = "San Jose"
-$VMCluster = "Compute Cluster"
-$VMNetwork = "sjc-comp-mgmt (1731)"
-$VMDatastore = "comp-vsanDatastore"
 $VMNetmask = "255.255.255.0"
 $VMGateway = "172.17.31.1"
 $VMDNS = "172.17.31.2"
@@ -101,7 +104,6 @@ $VMNTP = "172.17.31.2"
 $VMPassword = "VMware1!"
 $VMDomain = "tshirts.inc"
 $VMSyslog = "172.17.31.182"
-$VMFolder = "VCF"
 
 #### DO NOT EDIT BEYOND HERE ####
 

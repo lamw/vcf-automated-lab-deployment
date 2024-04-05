@@ -23,6 +23,8 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **04/05/2024**
+  * Split of the section "describes the location" to improve understanding
 * **03/27/2024**
   * Added support for license later (aka 60 day evaluation mode)
 * **02/08/2024**
@@ -97,6 +99,15 @@ This section describes the credentials to your physical vCenter Server in which 
 $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
 $VIPassword = "FILL-ME-IN"
+```
+
+This section describes the environment to your physical vCenter Server in which the VCF lab environment will be deployed to:
+```console
+$VMDatacenter = "San Jose"
+$VMCluster = "Compute Cluster"
+$VMNetwork = "sjc-comp-mgmt (1731)"
+$VMDatastore = "comp-vsanDatastore"
+$VMFolder = "VCF"
 ```
 
 This section describes the location of the files required for deployment.
@@ -207,13 +218,9 @@ $NSXAdminPassword = "VMware1!VMware1!"
 $NSXAuditPassword = "VMware1!VMware1!"
 ```
 
-This section describes the location as well as the generic networking settings applied to Nested ESXi & Cloud Builder VMs:
+This section describes the generic networking settings applied to Nested ESXi & Cloud Builder VMs:
 
 ```console
-$VMDatacenter = "San Jose"
-$VMCluster = "Compute Cluster"
-$VMNetwork = "sjc-comp-mgmt (1731)"
-$VMDatastore = "comp-vsanDatastore"
 $VMNetmask = "255.255.255.0"
 $VMGateway = "172.17.31.1"
 $VMDNS = "172.17.31.2"
@@ -221,7 +228,6 @@ $VMNTP = "172.17.31.2"
 $VMPassword = "VMware1!"
 $VMDomain = "tshirts.inc"
 $VMSyslog = "172.17.31.182"
-$VMFolder = "VCF"
 ```
 
 > **Note:** It is recommended that you use an NTP server that has both forward and DNS resolution configured. If this is not done, during the VCF JSON pre-req validation phase, it can take longer than expected for the DNS timeout to complete prior to allowing user to continue to VCF deployment.
