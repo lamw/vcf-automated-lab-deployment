@@ -5,9 +5,11 @@ $sddcManagerFQDN = "FILL_ME_IN"
 $sddcManagerUsername = "FILL_ME_IN"
 $sddcManagerPassword = "FILL_ME_IN"
 
-$ESXILicense = "FILL_ME_IN"
-$VSANLicense = "FILL_ME_IN"
-$NSXLicense = "FILL_ME_IN"
+# License Later feature only applicable for VCF 5.1.1 and later
+$LicenseLater = $true
+$ESXILicense = ""
+$VSANLicense = ""
+$NSXLicense = ""
 
 # Management Domain Configurations
 $VCFManagementDomainPoolName = "vcf-m01-rp01"
@@ -16,6 +18,9 @@ $VCFManagementDomainPoolName = "vcf-m01-rp01"
 $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 $VCFWorkloadDomainName = "wld-w01"
 $VCFWorkloadDomainOrgName = "vcf-w01"
+$EnableVCLM = $true
+$VLCMImageName = "Management-Domain-Personality"
+$EnableVSANESA = $false
 
 # vCenter Configuration
 $VCSAHostname = "vcf-w01-vc01"
@@ -120,8 +125,16 @@ if($commissionHost -eq 1) {
     $mgmtPoolId = (Get-VCFNetworkPool $VCFManagementDomainPoolName).id
 
     My-Logger "Updating $VCFWorkloadDomainAPIJSONFile with PoolId value ..."
-    $json = Get-Content -Raw $VCFWorkloadDomainAPIJSONFile
-    $json.replace("TBD",$mgmtPoolId) | Out-File $VCFWorkloadDomainAPIJSONFile
+    $hostCommissionFile = (Get-Content -Raw $VCFWorkloadDomainAPIJSONFile | ConvertFrom-Json)
+
+    foreach ($line in $hostCommissionFile) {
+        $line.networkPoolId = $mgmtPoolId
+
+        if($EnableVSANESA) {
+            $line.storageType = "VSAN_ESA"
+        }
+    }
+    $hostCommissionFile | ConvertTo-Json | Out-File -Force $VCFWorkloadDomainAPIJSONFile
 
     My-Logger "Validating ESXi host commission file $VCFWorkloadDomainAPIJSONFile ..."
     $commissionHostValidationResult = New-VCFCommissionedHost -json (Get-Content -Raw $VCFWorkloadDomainAPIJSONFile) -Validate
@@ -268,6 +281,35 @@ if($generateWLDDeploymentFile -eq 1) {
             "licenseKey" = $NSXLicense
             "nsxManagerAdminPassword" = $NSXAdminPassword
         }
+    }
+
+    if($LicenseLater) {
+        if($ESXILicense -eq "" -and $VSANLicense -eq "" -and $NSXLicense -eq "") {
+            $EvaluationMode = $true
+        } else {
+            $EvaluationMode = $false
+        }
+        $payload.add("deployWithoutLicenseKeys",$EvaluationMode)
+    }
+
+    if($EnableVSANESA) {
+        $esaEnable = [ordered]@{
+            "enabled" = $true
+        }
+        $payload.computeSpec.clusterSpecs.datastoreSpec.vsanDatastoreSpec.Add("esaConfig",$esaEnable)
+
+        $payload.computeSpec.clusterSpecs.datastoreSpec.vsanDatastoreSpec.Remove("failuresToTolerate")
+    }
+
+    if($EnableVCLM) {
+        $clusterImageId = (Get-VCFPersonality | where {$_.personalityName -eq $VLCMImageName}).personalityId
+
+        if($clusterImageId -eq $null) {
+            Write-Host -ForegroundColor Red "`nUnable to find vLCM Image named $VLCMImageName ...`n"
+            exit
+        }
+
+        $payload.computeSpec.clusterSpecs.Add("clusterImageId",$clusterImageId)
     }
 
     $payload | ConvertTo-Json -Depth 12 | Out-File $VCFWorkloadDomainDeploymentJSONFile

@@ -23,6 +23,17 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **05/28/2024**
+  * Management Domain:
+    * Refactor VCF Management Domain JSON generation to be more dynamic
+    * Refactor licensing code to support both licensed keys or license later feature
+    * Add required `clusterImageEnabled` to JSON by default using `$EnableVCLM` variable
+  * Workload Domain:
+    * Add `$EnableVCLM` variable to control vLCM-based image for vSphere Cluster
+    * Add `$VLCMImageName` variable to specify desired vLCM-based image (default uses Management Domain)
+    * Add `$EnableVSANESA` variable to specify whether vSAN ESA is enabled
+    * Add `$NestedESXiWLDVSANESA` variable to specify whether Nested ESXi VM for WLD will be used for vSAN ESA, requiring NVME controller vs PVSCSI controller (default)
+    * Refactor licensing code to support both licensed keys or license later feature
 * **03/27/2024**
   * Added support for license later (aka 60 day evaluation mode)
 * **02/08/2024**
@@ -173,10 +184,11 @@ $NestedESXiMGMTCapacityvDisk = "200" #GB
 $NestedESXiMGMTBootDisk = "32" #GB
 
 # Nested ESXi VM Resources for Workload Domain
+$NestedESXiWLDVSANESA = $false
 $NestedESXiWLDvCPU = "8"
-$NestedESXiWLDvMEM = "24" #GB
+$NestedESXiWLDvMEM = "36" #GB
 $NestedESXiWLDCachingvDisk = "4" #GB
-$NestedESXiWLDCapacityvDisk = "75" #GB
+$NestedESXiWLDCapacityvDisk = "250" #GB
 $NestedESXiWLDBootDisk = "32" #GB
 ```
 
@@ -194,6 +206,7 @@ $VCSAName = "vcf-m01-vc01"
 $VCSAIP = "172.17.31.182"
 $VCSARootPassword = "VMware1!"
 $VCSASSOPassword = "VMware1!"
+$EnableVCLM = $true
 ```
 
 This section describes the configurations that will be used to deploy the NSX-T infrastructure within the Nested ESXi environment:
@@ -339,6 +352,9 @@ $VCFManagementDomainPoolName = "vcf-m01-rp01"
 $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 $VCFWorkloadDomainName = "wld-w01"
 $VCFWorkloadDomainOrgName = "vcf-w01"
+$EnableVCLM = $true
+$VLCMImageName = "Management-Domain-Personality"
+$EnableVSANESA = $false
 ```
 
 This section defines the vCenter Server configuration that will be used in the Workload Domain
