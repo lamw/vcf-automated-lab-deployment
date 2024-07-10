@@ -37,6 +37,7 @@ $NSXManagerNode2IP = "172.17.31.123"
 $NSXManagerNode3Hostname = "vcf-m01-nsx01c"
 $NSXManagerNode3IP = "172.17.31.124"
 $NSXAdminPassword = "VMware1!VMware1!"
+$SeparateNSXSwitch = $false
 
 $VMNetmask = "255.255.255.0"
 $VMGateway = "172.17.31.1"
@@ -157,20 +158,43 @@ if($generateWLDDeploymentFile -eq 1) {
     My-Logger "Retreiving unassigned ESXi hosts from SDDC Manager and creating Workload Domain JSON deployment file $VCFWorkloadDomainDeploymentJSONFile"
     $hostSpecs = @()
     foreach ($id in (Get-VCFhost -Status UNASSIGNED_USEABLE).id) {
+        if($SeparateNSXSwitch) {
+            $vmNics = @(
+                @{
+                    "id" = "vmnic0"
+                    "vdsName" = "wld-w01-cl01-vds01"
+                }
+                @{
+                    "id" = "vmnic1"
+                    "vdsName" = "wld-w01-cl01-vds01"
+                }
+                @{
+                    "id" = "vmnic2"
+                    "vdsName" = "wld-w01-cl01-vds02"
+                }
+                @{
+                    "id" = "vmnic3"
+                    "vdsName" = "wld-w01-cl01-vds02"
+                }
+            )
+        } else {
+                $vmNics = @(
+                @{
+                    "id" = "vmnic0"
+                    "vdsName" = "wld-w01-cl01-vds01"
+                }
+                @{
+                    "id" = "vmnic1"
+                    "vdsName" = "wld-w01-cl01-vds01"
+                }
+            )
+        }
+
         $tmp = [ordered] @{
             "id" = $id
             "licenseKey" = $ESXILicense
             "hostNetworkSpec" = @{
-                "vmNics" = @(
-                    @{
-                        "id" = "vmnic0"
-                        "vdsName" = "wld-w01-cl01-vds01"
-                    }
-                    @{
-                        "id" = "vmnic1"
-                        "vdsName" = "wld-w01-cl01-vds01"
-                    }
-                )
+                "vmNics" = $vmNics
             }
         }
         $hostSpecs += $tmp
@@ -281,6 +305,10 @@ if($generateWLDDeploymentFile -eq 1) {
             "licenseKey" = $NSXLicense
             "nsxManagerAdminPassword" = $NSXAdminPassword
         }
+    }
+
+    if($SeparateNSXSwitch) {
+        $payload.computeSpec.clusterSpecs.networkSpec.vdsSpecs+=@{"name"="wld-w01-cl01-vds02";"isUsedByNsxt"=$true}
     }
 
     if($LicenseLater) {

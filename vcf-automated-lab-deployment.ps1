@@ -27,8 +27,8 @@ $CloudbuilderVMHostname = "vcf-m01-cb01"
 $CloudbuilderFQDN = "vcf-m01-cb01.tshirts.inc"
 $CloudbuilderIP = "172.17.31.180"
 $CloudbuilderAdminUsername = "admin"
-$CloudbuilderAdminPassword = "VMw@re123!"
-$CloudbuilderRootPassword = "VMw@re123!"
+$CloudbuilderAdminPassword = "VMw@re123!VMw@re123!"
+$CloudbuilderRootPassword = "VMw@re123!VMw@re123!"
 
 # SDDC Manager Configuration
 $SddcManagerHostname = "vcf-m01-sddcm01"
@@ -58,7 +58,7 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
 $NestedESXiMGMTvCPU = "12"
 $NestedESXiMGMTvMEM = "78" #GB
 $NestedESXiMGMTCachingvDisk = "4" #GB
-$NestedESXiMGMTCapacityvDisk = "250" #GB
+$NestedESXiMGMTCapacityvDisk = "500" #GB
 $NestedESXiMGMTBootDisk = "32" #GB
 
 # Nested ESXi VM Resources for Workload Domain
@@ -145,7 +145,9 @@ Function My-Logger {
 
 if($preCheck -eq 1) {
     # Detect VCF version based on Cloud Builder OVA (support is 5.1.0+)
-    if($CloudBuilderOVA -match "5.1.1") {
+    if($CloudBuilderOVA -match "5.2.0") {
+        $VCFVersion = "5.2.0"
+    } elseif($CloudBuilderOVA -match "5.1.1") {
         $VCFVersion = "5.1.1"
     } elseif($CloudBuilderOVA -match "5.1.0") {
         $VCFVersion = "5.1.0"
@@ -541,6 +543,7 @@ if($generateMgmJson -eq 1) {
         "managementPoolName" = $VCFManagementDomainPoolName
         "sddcId" = "vcf-m01"
         "taskName" = "workflowconfig/workflowspec-ems.json"
+        "esxLicense" = "$ESXILicense"
         "ceipEnabled" = $true
         "ntpServers" = @($VMNTP)
         "dnsSpec" = [ordered]@{
@@ -779,6 +782,7 @@ if($generateMgmJson -eq 1) {
         $vcfConfig.add("deployWithoutLicenseKeys",$EvaluationMode)
     }
 
+    My-Logger "Generating Cloud Builder VCF Management Domain configuration deployment file $VCFManagementDomainJSONFile"
     $vcfConfig | ConvertTo-Json -Depth 20 | Out-File -LiteralPath $VCFManagementDomainJSONFile
 }
 

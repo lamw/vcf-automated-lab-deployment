@@ -23,6 +23,12 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **07/10/2024**
+  * Management Domain:
+    * Add support for VCF 5.2 (password for Cloud Builder 5.2 must be 15 characters minimum)
+  * Workload Domain:
+    * Add support for VCF 5.2
+    * Add `$SeparateNSXSwitch` variable to specify separate VDS for NSX (simliar to Management Domain option)
 * **05/28/2024**
   * Management Domain:
     * Refactor VCF Management Domain JSON generation to be more dynamic
@@ -375,6 +381,7 @@ $NSXManagerNode2IP = "172.17.31.123"
 $NSXManagerNode3Hostname = "vcf-m01-nsx01c"
 $NSXManagerNode3IP = "172.17.31.124"
 $NSXAdminPassword = "VMware1!VMware1!"
+$SeparateNSXSwitch = $false
 ```
 
 This section defines basic networking information that will be needed to deploy vCenter and NSX components
