@@ -102,8 +102,12 @@ You are now ready to get your VCF on! 😁
 
 * Desktop (Windows, Mac or Linux) with latest PowerShell Core and PowerCLI 12.1 Core installed. See [instructions here](https://blogs.vmware.com/PowerCLI/2018/03/installing-powercli-10-0-0-macos.html) for more details
 * vSphere 8.0 Update 2 & Cloud Builder 5.1 or vSphere 7 Update 3h with Cloud Builder 4.5 or vSphere 7 Update 1d & Cloud Builder 4.2:
-    * [VMware Cloud Builder (22688368) OVA]([https://my.vmware.com/web/vmware/downloads/details?downloadGroup=VCF420&productId=1121&rPId=60057](https://customerconnect.vmware.com/downloads/details?downloadGroup=VCF510&productId=1484&rPId=112797))
-    * [Nested ESXi 8.0 Update 2 OVA](https://download3.vmware.com/software/vmw-tools/nested-esxi/Nested_ESXi8.0u2_Appliance_Template_v2.ova)
+    * 5.1.1
+      * [VMware Cloud Builder 5.1.1 (23480823) OVA]([https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.1&release=5.1.1&os=&servicePk=208634&language=EN))
+      * [Nested ESXi 8.0 Update 2b OVA](https://community.broadcom.com/flings)
+    * 5.1
+      * [VMware Cloud Builder 5.1 (22688368) OVA]([https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.1&release=5.1&os=&servicePk=203383&language=EN))
+      * [Nested ESXi 8.0 Update 2 OVA](https://community.broadcom.com/flings)
 
 ## Configuration
 
