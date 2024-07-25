@@ -8,9 +8,9 @@ $VIPassword = "FILL-ME-IN"
 
 # Full Path to both the Nested ESXi & Cloud Builder OVA
 $NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u2b_Appliance_Template_v1.ova"
-$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.1.1.0-23480823_OVF10.ova"
+$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.2.0.0-24108943_OVF10.ova"
 
-# VCF Licenses or leave blank for evaluation mode (requires VCF 5.1.1)
+# VCF Licenses or leave blank for evaluation mode (requires VCF 5.1.1 or later)
 $VCSALicense = ""
 $ESXILicense = ""
 $VSANLicense = ""
@@ -156,8 +156,16 @@ if($preCheck -eq 1) {
     }
 
     if($VCFVersion -eq $null) {
-        Write-Host -ForegroundColor Red "`nOnly VCF 5.1.0 & 5.1.1 is currently supported ...`n"
+        Write-Host -ForegroundColor Red "`nOnly VCF 5.1.0, 5.1.1 & 5.2 is currently supported ...`n"
         exit
+    }
+
+    if($VCFVersion -ge "5.2.0") {
+        write-host "here"
+        if( $CloudbuilderAdminPassword.ToCharArray().count -lt 15 -or $CloudbuilderRootPassword.ToCharArray().count -lt 15) {
+            Write-Host -ForegroundColor Red "`nCloud Builder passwords must be 15 characters or longer ...`n"
+            exit
+        }
     }
 
     if(!(Test-Path $NestedESXiApplianceOVA)) {
