@@ -80,6 +80,15 @@ You are now ready to get your VCF on! 😁
   * Initial Release
 
 ## Requirements
+
+* Supported VCF Versions and required build-of-materials (BOM)
+
+| VCF Version | Cloud Builder Download                                                                                                                                                                                                                     | Nested ESXi Download                                                       |
+|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 5.2         | [ VMware Cloud Builder 5.2 (23480823) OVA ]([https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.2&release=5.2&os=&servicePk=520823&language=EN )     | [ Nested ESXi 8.0 Update 3 OVA ]( https://community.broadcom.com/flings )  |
+| 5.1.1       | [ VMware Cloud Builder 5.1.1 (23480823) OVA ]( [https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.1&release=5.1.1&os=&servicePk=208634&language=EN ) | [ Nested ESXi 8.0 Update 2b OVA ]( https://community.broadcom.com/flings ) |
+| 5.1         | [VMware Cloud Builder 5.1 (22688368) OVA]([https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.1&release=5.1&os=&servicePk=203383&language=EN)         | [ Nested ESXi 8.0 Update 2 OVA ]( https://community.broadcom.com/flings )  |
+
 * vCenter Server running at least vSphere 7.0 or later
     * If your physical storage is vSAN, please ensure you've applied the following setting as mentioned [here](https://www.williamlam.com/2013/11/how-to-run-nested-esxi-on-top-of-vsan.html)
 * ESXi Networking
@@ -97,17 +106,8 @@ You are now ready to get your VCF on! 😁
         * Ability to provision up to 1.25 TB of storage
 
         **Note:** For detailed requirements, plesae refer to the planning and preparation workbook [here](https://docs.vmware.com/en/VMware-Cloud-Foundation/5.1/vcf-planning-and-preparation-workbook.zip)
-
-* VMware Cloud Foundation 4.x or 5.x Licenses for vCenter, ESXi, vSAN and NSX-T
-
+* VMware Cloud Foundation 5.x Licenses for vCenter, ESXi, vSAN and NSX-T (VCF 5.1.1 or later supports [License Later](https://williamlam.com/2024/03/enabling-license-later-evaluation-mode-for-vmware-cloud-foundation-vcf-5-1-1.html) feature, so license keys are now optional)
 * Desktop (Windows, Mac or Linux) with latest PowerShell Core and PowerCLI 12.1 Core installed. See [instructions here](https://blogs.vmware.com/PowerCLI/2018/03/installing-powercli-10-0-0-macos.html) for more details
-* vSphere 8.0 Update 2 & Cloud Builder 5.1 or vSphere 7 Update 3h with Cloud Builder 4.5 or vSphere 7 Update 1d & Cloud Builder 4.2:
-    * 5.1.1
-      * [VMware Cloud Builder 5.1.1 (23480823) OVA]([https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.1&release=5.1.1&os=&servicePk=208634&language=EN))
-      * [Nested ESXi 8.0 Update 2b OVA](https://community.broadcom.com/flings)
-    * 5.1
-      * [VMware Cloud Builder 5.1 (22688368) OVA]([https://support.broadcom.com/group/ecx/productfiles?subFamily=VMware%20Cloud%20Foundation&displayGroup=VMware%20Cloud%20Foundation%205.1&release=5.1&os=&servicePk=203383&language=EN))
-      * [Nested ESXi 8.0 Update 2 OVA](https://community.broadcom.com/flings)
 
 ## Configuration
 
