@@ -19,7 +19,7 @@ $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 $VCFWorkloadDomainName = "wld-w01"
 $VCFWorkloadDomainOrgName = "vcf-w01"
 $EnableVCLM = $true
-$VLCMImageName = "Management-Domain-Personality"
+$VLCMImageName = "Management-Domain-ESXi-Personality" # Ensure this label matches in SDDC Manager->Lifecycle Management->Image Management
 $EnableVSANESA = $false
 
 # vCenter Configuration

@@ -363,9 +363,11 @@ $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 $VCFWorkloadDomainName = "wld-w01"
 $VCFWorkloadDomainOrgName = "vcf-w01"
 $EnableVCLM = $true
-$VLCMImageName = "Management-Domain-Personality"
+$VLCMImageName = "Management-Domain-ESXi-Personality"
 $EnableVSANESA = $false
 ```
+
+> **Note:** If you're going to deploy VCF Workload Domain with vLCM enabled, make sure the `$VLCMImageName` name matches what you see in SDDC Manager under Lifecycle Management->Image Management. In VCF 5.2, the default name should be "Management-Domain-ESXi-Personality" and in VCF 5.1.x the default name should be "Management-Domain-Personality" but best to confirm before proceeding with deployment.
 
 This section defines the vCenter Server configuration that will be used in the Workload Domain
 ```console
