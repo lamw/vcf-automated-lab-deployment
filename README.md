@@ -23,6 +23,9 @@ You are now ready to get your VCF on! 😁
 ![](screenshots/screenshot-0.png)
 
 ## Changelog
+* **10/09/2024**
+  * Add support for VCF 5.2.1
+    * NSX Manager size changed from `small` to `medium` (needed for 5.2.1 or have seen deployment issues)
 * **07/10/2024**
   * Management Domain:
     * Add support for VCF 5.2 (password for Cloud Builder 5.2 must be 15 characters minimum)

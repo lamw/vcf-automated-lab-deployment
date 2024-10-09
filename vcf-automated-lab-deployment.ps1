@@ -8,7 +8,7 @@ $VIPassword = "FILL-ME-IN"
 
 # Full Path to both the Nested ESXi & Cloud Builder OVA
 $NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u3_Appliance_Template_v1.ova"
-$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.2.0.0-24108943_OVF10.ova"
+$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.2.1.0-24307856_OVF10.ova"
 
 # VCF Licenses or leave blank for evaluation mode (requires VCF 5.1.1 or later)
 $VCSALicense = ""
@@ -83,6 +83,7 @@ $VCSASSOPassword = "VMware1!"
 $EnableVCLM = $true
 
 # NSX Configuration
+$NSXManagerSize = "medium"
 $NSXManagerVIPHostname = "vcf-m01-nsx01"
 $NSXManagerVIPIP = "172.17.31.183"
 $NSXManagerNode1Hostname = "vcf-m01-nsx01a"
@@ -145,7 +146,7 @@ Function My-Logger {
 
 if($preCheck -eq 1) {
     # Detect VCF version based on Cloud Builder OVA (support is 5.1.0+)
-    if($CloudBuilderOVA -match "5.2.0") {
+    if($CloudBuilderOVA -match "5.2.0" -or $CloudBuilderOVA -match "5.2.1") {
         $VCFVersion = "5.2.0"
     } elseif($CloudBuilderOVA -match "5.1.1") {
         $VCFVersion = "5.1.1"
@@ -156,7 +157,7 @@ if($preCheck -eq 1) {
     }
 
     if($VCFVersion -eq $null) {
-        Write-Host -ForegroundColor Red "`nOnly VCF 5.1.0, 5.1.1 & 5.2 is currently supported ...`n"
+        Write-Host -ForegroundColor Red "`nOnly VCF 5.1.0+ is currently supported ...`n"
         exit
     }
 
@@ -614,7 +615,7 @@ if($generateMgmJson -eq 1) {
             }
         )
         "nsxtSpec" = [ordered]@{
-            "nsxtManagerSize" = "small"
+            "nsxtManagerSize" = $NSXManagerSize
             "nsxtManagers" = @(@{"hostname" = $NSXManagerNode1Hostname;"ip" = $NSXManagerNode1IP})
             "rootNsxtManagerPassword" = $NSXRootPassword
             "nsxtAdminPassword" = $NSXAdminPassword
