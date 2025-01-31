@@ -96,7 +96,7 @@ You are now ready to get your VCF on! 😁
 * vCenter Server running at least vSphere 7.0 or later
     * If your physical storage is vSAN, please ensure you've applied the following setting as mentioned [here](https://www.williamlam.com/2013/11/how-to-run-nested-esxi-on-top-of-vsan.html)
 * ESXi Networking
-  * Enable either [MAC Learning](https://williamlam.com/2018/04/native-mac-learning-in-vsphere-6-7-removes-the-need-for-promiscuous-mode-for-nested-esxi.html) or [Promiscuous Mode](https://kb.vmware.com/kb/1004099) on your physical ESXi host networking to ensure proper network connectivity for Nested ESXi workloads
+  * Enable either [MAC Learning](https://williamlam.com/2018/04/native-mac-learning-in-vsphere-6-7-removes-the-need-for-promiscuous-mode-for-nested-esxi.html) or [Promiscuous Mode](https://kb.vmware.com/kb/1004099) and also enable Forged transmits on your physical ESXi host networking to ensure proper network connectivity for Nested ESXi workloads
 * Resource Requirements
     * Compute
         * Ability to provision VMs with up to 8 vCPU (12 vCPU required for Workload Domain deployment)
@@ -188,7 +188,7 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
 
 **Note:** A VCF Management Domain can be deployed with just a single Nested ESXi VM. For more details, please see this [blog post](https://williamlam.com/2023/02/vmware-cloud-foundation-with-a-single-esxi-host-for-management-domain.html) for the required tweaks.
 
-This section describes the amount resources to allocate to either the Nested ESXi VM(s) for use with Managemen Domain as well as Workload Domain (if you choose to deploy.) Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
+This section describes the amount resources to allocate to either the Nested ESXi VM(s) for use with Management Domain as well as Workload Domain (if you choose to deploy.) Depending on your usage, you may want to increase the resources but for proper functionality, this is the minimum to start with. For Memory and Disk configuration, the unit is in GB.
 ```console
 # Nested ESXi VM Resources for Management Domain
 $NestedESXiMGMTvCPU = "12"
