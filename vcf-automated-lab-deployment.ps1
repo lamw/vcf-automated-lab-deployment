@@ -1,110 +1,17 @@
 # Author: William Lam
-# Website: www.williamlam.com
+# Website: https://williamlam.com
 
-# vCenter Server used to deploy VMware Cloud Foundation Lab
-$VIServer = "FILL-ME-IN"
-$VIUsername = "FILL-ME-IN"
-$VIPassword = "FILL-ME-IN"
+param (
+    [string]$EnvConfigFile
+)
 
-# Full Path to both the Nested ESXi & Cloud Builder OVA
-$NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u3_Appliance_Template_v1.ova"
-$CloudBuilderOVA = "/root/VMware-Cloud-Builder-5.2.1.0-24307856_OVF10.ova"
-
-# VCF Licenses or leave blank for evaluation mode (requires VCF 5.1.1 or later)
-$VCSALicense = ""
-$ESXILicense = ""
-$VSANLicense = ""
-$NSXLicense = ""
-
-# VCF Configurations
-$VCFManagementDomainPoolName = "vcf-m01-rp01"
-$VCFManagementDomainJSONFile = "vcf-mgmt.json"
-$VCFWorkloadDomainUIJSONFile = "vcf-commission-host-ui.json"
-$VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
-
-# Cloud Builder Configurations
-$CloudbuilderVMHostname = "vcf-m01-cb01"
-$CloudbuilderFQDN = "vcf-m01-cb01.tshirts.inc"
-$CloudbuilderIP = "172.17.31.180"
-$CloudbuilderAdminUsername = "admin"
-$CloudbuilderAdminPassword = "VMw@re123!VMw@re123!"
-$CloudbuilderRootPassword = "VMw@re123!VMw@re123!"
-
-# SDDC Manager Configuration
-$SddcManagerHostname = "vcf-m01-sddcm01"
-$SddcManagerIP = "172.17.31.181"
-$SddcManagerVcfPassword = "VMware1!VMware1!"
-$SddcManagerRootPassword = "VMware1!VMware1!"
-$SddcManagerRestPassword = "VMware1!VMware1!"
-$SddcManagerLocalPassword = "VMware1!VMware1!"
-
-# Nested ESXi VMs for Management Domain
-$NestedESXiHostnameToIPsForManagementDomain = @{
-    "vcf-m01-esx01"   = "172.17.31.185"
-    "vcf-m01-esx02"   = "172.17.31.186"
-    "vcf-m01-esx03"   = "172.17.31.187"
-    "vcf-m01-esx04"   = "172.17.31.188"
+# Validate that the file exists
+if ($EnvConfigFile -and (Test-Path $EnvConfigFile)) {
+    . $EnvConfigFile  # Dot-sourcing the config file
+} else {
+    Write-Host -ForegroundColor Red "`nNo valid deployment configuration file was provided or file was not found.`n"
+    exit
 }
-
-# Nested ESXi VMs for Workload Domain
-$NestedESXiHostnameToIPsForWorkloadDomain = @{
-    "vcf-m01-esx05"   = "172.17.31.189"
-    "vcf-m01-esx06"   = "172.17.31.190"
-    "vcf-m01-esx07"   = "172.17.31.191"
-    "vcf-m01-esx08"   = "172.17.31.192"
-}
-
-# Nested ESXi VM Resources for Management Domain
-$NestedESXiMGMTvCPU = "12"
-$NestedESXiMGMTvMEM = "78" #GB
-$NestedESXiMGMTCachingvDisk = "4" #GB
-$NestedESXiMGMTCapacityvDisk = "500" #GB
-$NestedESXiMGMTBootDisk = "32" #GB
-
-# Nested ESXi VM Resources for Workload Domain
-$NestedESXiWLDVSANESA = $false
-$NestedESXiWLDvCPU = "8"
-$NestedESXiWLDvMEM = "36" #GB
-$NestedESXiWLDCachingvDisk = "4" #GB
-$NestedESXiWLDCapacityvDisk = "250" #GB
-$NestedESXiWLDBootDisk = "32" #GB
-
-# ESXi Network Configuration
-$NestedESXiManagementNetworkCidr = "172.17.31.0/24" # should match $VMNetwork configuration
-$NestedESXivMotionNetworkCidr = "172.17.32.0/24"
-$NestedESXivSANNetworkCidr = "172.17.33.0/24"
-$NestedESXiNSXTepNetworkCidr = "172.17.34.0/24"
-
-# vCenter Configuration
-$VCSAName = "vcf-m01-vc01"
-$VCSAIP = "172.17.31.182"
-$VCSARootPassword = "VMware1!"
-$VCSASSOPassword = "VMware1!"
-$EnableVCLM = $true
-
-# NSX Configuration
-$NSXManagerSize = "medium"
-$NSXManagerVIPHostname = "vcf-m01-nsx01"
-$NSXManagerVIPIP = "172.17.31.183"
-$NSXManagerNode1Hostname = "vcf-m01-nsx01a"
-$NSXManagerNode1IP = "172.17.31.184"
-$NSXRootPassword = "VMware1!VMware1!"
-$NSXAdminPassword = "VMware1!VMware1!"
-$NSXAuditPassword = "VMware1!VMware1!"
-
-# General Deployment Configuration for Nested ESXi & Cloud Builder VM
-$VMDatacenter = "San Jose"
-$VMCluster = "Compute Cluster"
-$VMNetwork = "sjc-comp-mgmt (1731)"
-$VMDatastore = "comp-vsanDatastore"
-$VMNetmask = "255.255.255.0"
-$VMGateway = "172.17.31.1"
-$VMDNS = "172.17.31.2"
-$VMNTP = "172.17.31.2"
-$VMPassword = "VMware1!"
-$VMDomain = "tshirts.inc"
-$VMSyslog = "172.17.31.182"
-$VMFolder = "VCF"
 
 #### DO NOT EDIT BEYOND HERE ####
 
@@ -162,7 +69,6 @@ if($preCheck -eq 1) {
     }
 
     if($VCFVersion -ge "5.2.0") {
-        write-host "here"
         if( $CloudbuilderAdminPassword.ToCharArray().count -lt 15 -or $CloudbuilderRootPassword.ToCharArray().count -lt 15) {
             Write-Host -ForegroundColor Red "`nCloud Builder passwords must be 15 characters or longer ...`n"
             exit

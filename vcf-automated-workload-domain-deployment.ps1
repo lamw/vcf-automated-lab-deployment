@@ -1,47 +1,17 @@
 # Author: William Lam
-# Website: www.williamlam.com
+# Website: https://williamlam.com
 
-$sddcManagerFQDN = "FILL_ME_IN"
-$sddcManagerUsername = "FILL_ME_IN"
-$sddcManagerPassword = "FILL_ME_IN"
+param (
+    [string]$EnvConfigFile
+)
 
-# License Later feature only applicable for VCF 5.1.1 and later
-$LicenseLater = $true
-$ESXILicense = ""
-$VSANLicense = ""
-$NSXLicense = ""
-
-# Management Domain Configurations
-$VCFManagementDomainPoolName = "vcf-m01-rp01"
-
-# Workload Domain Configurations
-$VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
-$VCFWorkloadDomainName = "wld-w01"
-$VCFWorkloadDomainOrgName = "vcf-w01"
-$EnableVCLM = $true
-$VLCMImageName = "Management-Domain-ESXi-Personality" # Ensure this label matches in SDDC Manager->Lifecycle Management->Image Management
-$EnableVSANESA = $false
-
-# vCenter Configuration
-$VCSAHostname = "vcf-w01-vc01"
-$VCSAIP = "172.17.31.120"
-$VCSARootPassword = "VMware1!"
-
-# NSX Configuration
-$NSXManagerVIPHostname = "vcf-w01-nsx01"
-$NSXManagerVIPIP = "172.17.31.121"
-$NSXManagerNode1Hostname = "vcf-m01-nsx01a"
-$NSXManagerNode1IP = "172.17.31.122"
-$NSXManagerNode2Hostname = "vcf-m01-nsx01b"
-$NSXManagerNode2IP = "172.17.31.123"
-$NSXManagerNode3Hostname = "vcf-m01-nsx01c"
-$NSXManagerNode3IP = "172.17.31.124"
-$NSXAdminPassword = "VMware1!VMware1!"
-$SeparateNSXSwitch = $false
-
-$VMNetmask = "255.255.255.0"
-$VMGateway = "172.17.31.1"
-$VMDomain = "tshirts.inc"
+# Validate that the file exists
+if ($EnvConfigFile -and (Test-Path $EnvConfigFile)) {
+    . $EnvConfigFile  # Dot-sourcing the config file
+} else {
+    Write-Host -ForegroundColor Red "`nNo valid deployment configuration file was provided or file was not found.`n"
+    exit
+}
 
 #### DO NOT EDIT BEYOND HERE ####
 
@@ -337,7 +307,7 @@ if($generateWLDDeploymentFile -eq 1) {
             exit
         }
 
-        $payload.computeSpec.clusterSpecs.Add("clusterImageId",$clusterImageId)
+        $payload.computeSpec.clusterSpecs[0].Add("clusterImageId",$clusterImageId)
     }
 
     $payload | ConvertTo-Json -Depth 12 | Out-File $VCFWorkloadDomainDeploymentJSONFile
