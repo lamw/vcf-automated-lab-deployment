@@ -24,7 +24,7 @@ $VCFVersion = ""
 $preCheck = 1
 $confirmDeployment = 1
 $deployNestedESXiVMsForMgmt = 1
-$deployNestedESXiVMsForWLD = 1
+$deployNestedESXiVMsForWLD = 0
 $deployCloudBuilder = 1
 $moveVMsIntovApp = 1
 $generateMgmJson = 1
@@ -36,6 +36,22 @@ $srcNotificationScript = "vcf-bringup-notification.sh"
 $dstNotificationScript = "/root/vcf-bringup-notification.sh"
 
 $StartTime = Get-Date
+
+# Ensure Posh-SSH is installed
+if (-not (Get-Module -ListAvailable -Name Posh-SSH)) {
+    Write-Host "🔍 Posh-SSH not found. Installing..." -ForegroundColor Yellow
+
+    try {
+        Install-Module -Name Posh-SSH -Force -AllowClobber -Scope CurrentUser -ErrorAction Stop
+        Write-Host "✅ Posh-SSH installed." -ForegroundColor Green
+    } catch {
+        Write-Host "❌ Failed to install Posh-SSH: $_" -ForegroundColor Red
+        exit 1
+    }
+}
+
+Import-Module Posh-SSH -ErrorAction Stop
+
 
 Function My-Logger {
     param(
@@ -135,6 +151,15 @@ if($confirmDeployment -eq 1) {
         Write-Host -ForegroundColor White "$NestedESXiMGMTCachingvDisk GB"
         Write-Host -NoNewline -ForegroundColor Green "Capacity VMDK: "
         Write-Host -ForegroundColor White "$NestedESXiMGMTCapacityvDisk GB"
+        Write-Host -NoNewline -ForegroundColor Green "vSAN ESA: "
+        if ($NestedESXiMGMTVSANESA  -eq 1) {
+            Write-Host -ForegroundColor White "yes"
+        } elseif ($NestedESXiMGMTVSANESA -eq 0) {
+            Write-Host -ForegroundColor White "no"
+        } else {
+            Write-Host -ForegroundColor Yellow "unknown"
+        }
+
     }
 
     if($deployNestedESXiVMsForWLD -eq 1) {
@@ -201,7 +226,7 @@ if($deployNestedESXiVMsForMgmt -eq 1) {
         $ovfconfig.common.guestinfo.ssh.value = $true
 
         My-Logger "Deploying Nested ESXi VM $VMName ..."
-        $vm = Import-VApp -Source $NestedESXiApplianceOVA -OvfConfiguration $ovfconfig -Name $VMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
+        $vm = Import-VApp -Server $viConnection -Source $NestedESXiApplianceOVA -OvfConfiguration $ovfconfig -Name $VMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
 
         My-Logger "Adding vmnic2/vmnic3 to Nested ESXi VMs ..."
         $vmPortGroup = Get-VirtualNetwork -Name $VMNetwork -Location ($cluster | Get-Datacenter)
@@ -230,10 +255,175 @@ if($deployNestedESXiVMsForMgmt -eq 1) {
         My-Logger "Updating vSAN Boot Disk size to $NestedESXiMGMTBootDisk GB ..."
         Get-HardDisk -Server $viConnection -VM $vm -Name "Hard disk 1" | Set-HardDisk -CapacityGB $NestedESXiMGMTBootDisk -Confirm:$false | Out-File -Append -LiteralPath $verboseLogFile
 
+        # vSAN ESA requires NVMe Controller
+        if($NestedESXiMGMTVSANESA) {
+            My-Logger "Updating storage controller to NVMe for vSAN ESA ..."
+            $devices = $vm.ExtensionData.Config.Hardware.Device
+
+            $newControllerKey = -102
+
+            # Reconfigure 1 - Add NVMe Controller & Update Disk Mapping to new controller
+            $deviceChanges = @()
+            $spec = New-Object VMware.Vim.VirtualMachineConfigSpec
+
+            $scsiController = $devices | where {$_.getType().Name -eq "ParaVirtualSCSIController"}
+            $scsiControllerDisks = $scsiController.device
+
+            $nvmeControllerAddSpec = New-Object VMware.Vim.VirtualDeviceConfigSpec
+            $nvmeControllerAddSpec.Device = New-Object VMware.Vim.VirtualNVMEController
+            $nvmeControllerAddSpec.Device.Key = $newControllerKey
+            $nvmeControllerAddSpec.Device.BusNumber = 0
+            $nvmeControllerAddSpec.Operation = 'add'
+            $deviceChanges+=$nvmeControllerAddSpec
+
+            foreach ($scsiControllerDisk in $scsiControllerDisks) {
+                $device = $devices | where {$_.key -eq $scsiControllerDisk}
+
+                $changeControllerSpec = New-Object VMware.Vim.VirtualDeviceConfigSpec
+                $changeControllerSpec.Operation = 'edit'
+                $changeControllerSpec.Device = $device
+                $changeControllerSpec.Device.key = $device.key
+                $changeControllerSpec.Device.unitNumber = $device.UnitNumber
+                $changeControllerSpec.Device.ControllerKey = $newControllerKey
+                $deviceChanges+=$changeControllerSpec
+            }
+
+            $spec.deviceChange = $deviceChanges
+
+            $task = $vm.ExtensionData.ReconfigVM_Task($spec)
+            $task1 = Get-Task -Id ("Task-$($task.value)")
+            $task1 | Wait-Task | Out-Null
+
+            # Reconfigure 2 - Remove PVSCSI Controller
+            $spec = New-Object VMware.Vim.VirtualMachineConfigSpec
+            $scsiControllerRemoveSpec = New-Object VMware.Vim.VirtualDeviceConfigSpec
+            $scsiControllerRemoveSpec.Operation = 'remove'
+            $scsiControllerRemoveSpec.Device = $scsiController
+            $spec.deviceChange = $scsiControllerRemoveSpec
+
+            $task = $vm.ExtensionData.ReconfigVM_Task($spec)
+            $task1 = Get-Task -Id ("Task-$($task.value)")
+            $task1 | Wait-Task | Out-Null
+        }
+
         My-Logger "Powering On $vmname ..."
         $vm | Start-Vm -RunAsync | Out-Null
+
+        # Wait for ping
+        $maxWaitTime = 300
+        $waited = 0
+        $pingSuccess = $false
+
+        My-Logger "Waiting for ping response from $VMIPAddress ..."
+        while ($waited -lt $maxWaitTime) {
+            if (Test-Connection -ComputerName $VMIPAddress -Count 1 -Quiet) {
+                $pingSuccess = $true
+                break
+            }
+            Start-Sleep -Seconds 5
+            $waited += 5
+        }
+
+        if (-not $pingSuccess) {
+            Write-Host "❌ Ping timeout for $VMIPAddress" -ForegroundColor Red
+            return
+        }
+
+        # Wait for SSH
+        $sshReady = $false
+        $sshWaited = 0
+        $sshMaxWaitTime = 300
+        My-Logger "Testing SSH connection to $VMIPAddress ..."
+
+        while ($sshWaited -lt $sshMaxWaitTime) {
+            try {
+                $sshCred = New-Object System.Management.Automation.PSCredential ("root", (ConvertTo-SecureString $VMPassword -AsPlainText -Force))
+                $prevWarningPref = $WarningPreference
+                $WarningPreference = 'SilentlyContinue'
+                $sshSession = New-SSHSession -ComputerName $VMIPAddress -Credential $sshCred -AcceptKey -Force -ErrorAction Stop
+                $WarningPreference = $prevWarningPref
+                $sshReady = $true
+                break
+            } catch {
+                Start-Sleep -Seconds 5
+                $sshWaited += 5
+            }
+        }
+
+        if ($sshReady) {
+            Write-Host "✅ SSH reachable at $VMIPAddress" -ForegroundColor Green
+            if ($sshSession -and $sshSession.SessionId) {
+                Remove-SSHSession -SessionId $sshSession.SessionId | Out-Null
+            }
+        } else {
+            Write-Host "❌ SSH not reachable at $VMIPAddress" -ForegroundColor Red
+        }
+
+        # Wait 1 minute before continuing
+        My-Logger "Waiting 30 seconds before starting VIB deployment ..."
+        Start-Sleep -Seconds 30
+
+        # === VIB Deployment & vsanmgmtd Restart ===
+        $esxDatastore = "${VMName}-esx-install-datastore"
+        $vmstorePath = "vmstores:\$VMIPAddress@443\ha-datacenter\$esxDatastore"
+        $vibPath = "/vmfs/volumes/$esxDatastore/nested-vsan-esa-mock-hw.vib"
+
+        Write-Host "Connecting to $VMIPAddress for VIB installation..." -ForegroundColor Cyan
+        $esxConn = Connect-VIServer -Server $VMIPAddress -User "root" -Password $VMPassword -WarningAction SilentlyContinue
+
+        try {
+            $esxVMHost = Get-VMHost -Server $esxConn -Name $VMIPAddress
+            $esxcli = Get-EsxCli -Server $esxConn -VMHost $esxVMHost -V2
+
+            Write-Host "Uploading '$MockFile' to $vmstorePath ..."
+            Copy-DatastoreItem -Item $MockFile -Destination $vmstorePath -Force -ErrorAction Stop 
+
+            Write-Host "Setting acceptance level to CommunitySupported ..."
+            $esxcli.software.acceptance.set.Invoke(@{ level = "CommunitySupported" })
+
+            Write-Host "Installing VIB ..."
+            $installParams = @{ viburl = $vibPath; nosigcheck = $true }
+            $result = $esxcli.software.vib.install.Invoke($installParams)
+
+            Write-Host "✅ VIB installation result: $($result.Message)" -ForegroundColor Green
+
+        } catch {
+            Write-Host "❌ EsxCLI operations failed on $VMName ($VMIPAddress): $_" -ForegroundColor Red
+        }
+
+        if ($esxConn) {
+            Disconnect-VIServer -Server $esxConn -Confirm:$false -Force | Out-Null
+        }
+
+
+        # Restart vsanmgmtd via SSH
+        Write-Host "🔁 Restarting 'vsanmgmtd' on $VMName via SSH..." -ForegroundColor Cyan
+        try {
+            $sshCred = New-Object System.Management.Automation.PSCredential ("root", (ConvertTo-SecureString $VMPassword -AsPlainText -Force))
+            $prevWarningPref = $WarningPreference
+            $WarningPreference = 'SilentlyContinue'
+            $sshSession = New-SSHSession -ComputerName $VMIPAddress -Credential $sshCred -AcceptKey -Force -ErrorAction Stop
+            $WarningPreference = $prevWarningPref
+
+            $restartCommand = "/etc/init.d/vsanmgmtd restart"
+            $restartResult = Invoke-SSHCommand -SessionId $sshSession.SessionId -Command $restartCommand
+
+            if ($restartResult.ExitStatus -eq 0) {
+                Write-Host "✅ vsanmgmtd restarted on $VMName ($VMIPAddress)" -ForegroundColor Green
+            } else {
+                Write-Host "⚠️ vsanmgmtd restart might have failed on $VMName ($VMIPAddress): $($restartResult.Output)" -ForegroundColor Yellow
+            }
+
+            if ($sshSession -and $sshSession.SessionId) {
+                Remove-SSHSession -SessionId $sshSession.SessionId | Out-Null
+            }
+        } catch {
+            Write-Host "❌ SSH restart of vsanmgmtd failed on $VMName ($VMIPAddress): $_" -ForegroundColor Red
+        }
+
     }
 }
+
 
 if($deployNestedESXiVMsForWLD -eq 1) {
     $NestedESXiHostnameToIPsForWorkloadDomain.GetEnumerator() | Sort-Object -Property Value | Foreach-Object {
@@ -255,7 +445,8 @@ if($deployNestedESXiVMsForWLD -eq 1) {
         $ovfconfig.common.guestinfo.ssh.value = $true
 
         My-Logger "Deploying Nested ESXi VM $VMName ..."
-        $vm = Import-VApp -Source $NestedESXiApplianceOVA -OvfConfiguration $ovfconfig -Name $VMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
+        $vm = Import-VApp -Server $viConnection -Source $NestedESXiApplianceOVA -OvfConfiguration $ovfconfig -Name $VMName -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
+
 
         My-Logger "Adding vmnic2/vmnic3 to Nested ESXi VMs ..."
         $vmPortGroup = Get-VirtualNetwork -Name $VMNetwork -Location ($cluster | Get-Datacenter)
@@ -358,7 +549,7 @@ if($deployCloudBuilder -eq 1) {
     $ovfconfig.common.guestinfo.ROOT_PASSWORD.value = $CloudbuilderRootPassword
 
     My-Logger "Deploying Cloud Builder VM $CloudbuilderVMHostname ..."
-    $vm = Import-VApp -Source $CloudBuilderOVA -OvfConfiguration $ovfconfig -Name $CloudbuilderVMHostname -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
+    $vm = Import-VApp -Server $viConnection -Source $CloudBuilderOVA -OvfConfiguration $ovfconfig -Name $CloudbuilderVMHostname -Location $VMCluster -VMHost $vmhost -Datastore $datastore -DiskStorageFormat thin
 
     My-Logger "Powering On $CloudbuilderVMHostname ..."
     $vm | Start-Vm -RunAsync | Out-Null
@@ -685,6 +876,13 @@ if($generateMgmJson -eq 1) {
 
         }
         $vcfConfig.dvsSpecs+=$sepNsxSwitchSpec
+    }
+
+    if ($NestedESXiMGMTVSANESA) {
+    $vcfConfig["vsanSpec"].Add("esaConfig", @{
+        "enabled" = $true
+    })
+    $vcfConfig["vsanSpec"].Add("hclFile", $null)
     }
 
     # License Later feature only applicable for VCF 5.1.1 and later

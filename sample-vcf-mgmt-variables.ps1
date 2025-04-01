@@ -20,6 +20,7 @@ $VMFolder = "wlam-vcf52"
 # Full Path to both the Nested ESXi & Cloud Builder OVA
 $NestedESXiApplianceOVA = "/data/images/Nested_ESXi8.0u3c_Appliance_Template_v1.ova"
 $CloudBuilderOVA = "/data/images/VMware-Cloud-Builder-5.2.1.1-24397777_OVF10.ova"
+$MockFile = "/data/images/nested-vsan-esa-mock-hw.vib"
 
 # VCF Licenses or leave blank for evaluation mode (requires VCF 5.1.1 or later)
 $VCSALicense = ""
@@ -66,9 +67,10 @@ $NestedESXiHostnameToIPsForWorkloadDomain = @{
 }
 
 # Nested ESXi VM Resources for Management Domain
+$NestedESXiMGMTVSANESA = $true
 $NestedESXiMGMTvCPU = "12"
 $NestedESXiMGMTvMEM = "96" #GB
-$NestedESXiMGMTCachingvDisk = "4" #GB
+$NestedESXiMGMTCachingvDisk = "500" #GB
 $NestedESXiMGMTCapacityvDisk = "500" #GB
 $NestedESXiMGMTBootDisk = "32" #GB
 
